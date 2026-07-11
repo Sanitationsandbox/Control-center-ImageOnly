@@ -42,7 +42,7 @@ export function PreviewWall() {
 
   const activeDocument = mediaDocuments.find(
     (document) => document.id === activePdfId,
-  );
+  ) as any;
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void refreshPages(), 0);
