@@ -6,46 +6,26 @@ import { controlOptions } from "../control-options";
 import styles from "../control-center.module.css";
 
 export function ControlCenter() {
-  const [activePdfId, setActivePdfId] = useState<PdfId>("pdf-1"); // Default to pdf-1
+  const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number | null>(7);
   const [isSending, setIsSending] = useState(false);
-  const [status, setStatus] = useState("");
 
-  // Find the details of the active document
-  const activeOption = controlOptions.find((opt) => opt.pdfId === activePdfId);
-  const activeDocName = activeOption ? activeOption.shortName : "Slideshow";
+  // Determine current display title
+  const displayTitle = activePdfId === "pdf-1" ? "Image Slide" : "Default Video";
 
-  const fetchState = useCallback(async (isInitial = false) => {
+  const fetchState = useCallback(async () => {
     try {
       const response = await fetch("/api/pdf-control", { cache: "no-store" });
       if (!response.ok) throw new Error("Fetch failed");
       const data = (await response.json()) as PdfRemoteState;
 
-      // If there is an active image document, use it.
-      // Otherwise, if it's initial load, we can activate pdf-1.
-      let targetPdfId = data.activePdfId;
-      const targetDoc = mediaDocuments.find(d => d.id === targetPdfId);
-
-      if (!targetPdfId || targetDoc?.kind !== "images") {
-        targetPdfId = "pdf-1";
-      }
-
-      setActivePdfId(targetPdfId);
+      setActivePdfId(data.activePdfId);
       
-      const docState = data.documents[targetPdfId];
+      const docState = data.documents["pdf-1"];
       if (docState) {
         setCurrentPage(docState.page);
         setTotalPages(docState.totalPages);
-      }
-
-      // If initial load and the remote active PDF is not this one, activate it
-      if (isInitial && data.activePdfId !== targetPdfId) {
-        await fetch("/api/pdf-control", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "activate", pdfId: targetPdfId }),
-        });
       }
     } catch {
       // Ignore errors during polling
@@ -54,21 +34,20 @@ export function ControlCenter() {
 
   useEffect(() => {
     // Initial fetch
-    void fetchState(true);
+    void fetchState();
 
     // Poll state every 1000ms
     const timer = setInterval(() => {
-      void fetchState(false);
+      void fetchState();
     }, 1000);
 
     return () => clearInterval(timer);
   }, [fetchState]);
 
   async function sendCommand(direction: PdfDirection) {
-    if (isSending) return;
+    if (isSending || activePdfId !== "pdf-1") return;
 
     setIsSending(true);
-    setStatus("Sending…");
 
     // Optimistic update
     const prevPage = currentPage;
@@ -92,11 +71,35 @@ export function ControlCenter() {
       });
 
       if (!response.ok) throw new Error("Command failed");
-      setStatus("");
     } catch {
-      setStatus("Unable to reach preview");
       // Rollback optimistic update
       setCurrentPage(prevPage);
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  async function togglePower() {
+    if (isSending) return;
+    setIsSending(true);
+
+    const nextPdfId = activePdfId === "pdf-1" ? null : "pdf-1";
+    setActivePdfId(nextPdfId);
+
+    try {
+      const response = await fetch("/api/pdf-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: nextPdfId ? "activate" : "clear",
+          pdfId: nextPdfId,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Toggle power failed");
+    } catch {
+      // Rollback optimistic update
+      setActivePdfId(activePdfId);
     } finally {
       setIsSending(false);
     }
@@ -107,13 +110,36 @@ export function ControlCenter() {
       <div className={styles.glow} aria-hidden="true" />
       
       <div className={styles.remoteContainer}>
-        <h1 className={styles.remoteTitle}>{activeDocName}</h1>
+        <div className={styles.remoteHeader}>
+          <h1 className={styles.remoteTitle}>{displayTitle}</h1>
+          <button
+            type="button"
+            className={`${styles.powerBtn} ${activePdfId === "pdf-1" ? styles.powerOn : styles.powerOff}`}
+            onClick={() => void togglePower()}
+            disabled={isSending}
+            aria-label="Toggle Power"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={styles.powerIcon}
+            >
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+              <line x1="12" y1="2" x2="12" y2="12" />
+            </svg>
+          </button>
+        </div>
+
         <div className={styles.remoteButtonsContainer}>
           <button
             type="button"
             className={`${styles.remoteBtn} ${styles.prevBtn}`}
             aria-label="Previous Slide"
-            disabled={isSending || currentPage <= 1}
+            disabled={isSending || activePdfId !== "pdf-1" || currentPage <= 1}
             onClick={() => void sendCommand("previous")}
           >
             <svg
@@ -134,7 +160,12 @@ export function ControlCenter() {
             type="button"
             className={`${styles.remoteBtn} ${styles.nextBtn}`}
             aria-label="Next Slide"
-            disabled={isSending || (totalPages !== null && currentPage >= totalPages)}
+            disabled={
+              isSending ||
+              activePdfId !== "pdf-1" ||
+              totalPages === null ||
+              currentPage >= totalPages
+            }
             onClick={() => void sendCommand("next")}
           >
             <svg
