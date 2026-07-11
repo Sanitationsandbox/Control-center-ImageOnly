@@ -12,7 +12,7 @@ export function ControlCenter() {
   const [isSending, setIsSending] = useState(false);
 
   // Determine current display title
-  const displayTitle = activePdfId === "pdf-1" ? "Image Slide" : "Default Video";
+  const displayTitle = activePdfId === "pdf-1" ? "Image Slide" : "Control Center";
 
   const fetchState = useCallback(async () => {
     try {
