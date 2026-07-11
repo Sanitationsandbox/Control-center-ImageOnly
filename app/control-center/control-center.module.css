@@ -254,11 +254,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 100%;
-  max-width: 500px;
-  min-height: 480px;
-  padding: 40px 30px;
+  max-width: 420px;
+  padding: 30px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 32px;
@@ -266,114 +265,28 @@
     0 30px 60px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
-  text-align: center;
-}
-
-.remoteHeader {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.remoteStatusBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: rgba(95, 255, 224, 0.08);
-  border: 1px solid rgba(95, 255, 224, 0.2);
-  border-radius: 100px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #5fffe0;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #5fffe0;
-  box-shadow: 0 0 10px #5fffe0;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(95, 255, 224, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(95, 255, 224, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(95, 255, 224, 0);
-  }
 }
 
 .remoteTitle {
-  margin: 8px 0 0 0;
-  font-size: 28px;
+  margin: 0 0 24px 0;
+  font-size: 24px;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.02em;
-}
-
-.pageProgressContainer {
-  width: 100%;
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pageIndicator {
-  margin: 0;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-}
-
-.currentPageNum {
-  color: #ffffff;
-  font-weight: 700;
-}
-
-.progressBarBg {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.progressBarFill {
-  height: 100%;
-  background: linear-gradient(90deg, #00f3d0, #5fffe0);
-  border-radius: 10px;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 12px rgba(95, 255, 224, 0.4);
+  letter-spacing: -0.01em;
+  opacity: 0.95;
 }
 
 .remoteButtonsContainer {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 24px;
   width: 100%;
-  margin: 40px 0;
 }
 
 .remoteBtn {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   aspect-ratio: 1;
   padding: 24px;
   background: rgba(255, 255, 255, 0.03);
@@ -403,8 +316,8 @@
 }
 
 .btnIcon {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   color: #5fffe0;
   transition: transform 0.2s ease;
 }
@@ -421,21 +334,3 @@
   transform: translateX(4px);
 }
 
-.btnLabel {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.5);
-  transition: color 0.2s ease;
-}
-
-.remoteBtn:hover .btnLabel {
-  color: #5fffe0;
-}
-
-.remoteStatusText {
-  margin: 0;
-  font-size: 14px;
-  color: rgba(95, 255, 224, 0.8);
-  min-height: 20px;
-}

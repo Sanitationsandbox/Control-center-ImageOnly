@@ -107,27 +107,7 @@ export function ControlCenter() {
       <div className={styles.glow} aria-hidden="true" />
       
       <div className={styles.remoteContainer}>
-        <header className={styles.remoteHeader}>
-          <span className={styles.remoteStatusBadge}>
-            <span className={styles.statusDot} />
-            Remote Connected
-          </span>
-          <h1 className={styles.remoteTitle}>{activeDocName}</h1>
-          {totalPages && (
-            <div className={styles.pageProgressContainer}>
-              <p className={styles.pageIndicator}>
-                Slide <span className={styles.currentPageNum}>{currentPage}</span> of {totalPages}
-              </p>
-              <div className={styles.progressBarBg}>
-                <div 
-                  className={styles.progressBarFill} 
-                  style={{ width: `${(currentPage / totalPages) * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </header>
-
+        <h1 className={styles.remoteTitle}>{activeDocName}</h1>
         <div className={styles.remoteButtonsContainer}>
           <button
             type="button"
@@ -148,7 +128,6 @@ export function ControlCenter() {
             >
               <path d="m15 18-6-6 6-6" />
             </svg>
-            <span className={styles.btnLabel}>PREVIOUS</span>
           </button>
 
           <button
@@ -170,15 +149,8 @@ export function ControlCenter() {
             >
               <path d="m9 18 6-6-6-6" />
             </svg>
-            <span className={styles.btnLabel}>NEXT</span>
           </button>
         </div>
-
-        {status && (
-          <p className={styles.remoteStatusText} aria-live="polite">
-            {status}
-          </p>
-        )}
       </div>
     </main>
   );
