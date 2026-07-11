@@ -11,35 +11,11 @@ export type ControlOption = {
 
 export const controlOptions: ControlOption[] = [
   {
-    id: "community-reinvented-toilet",
+    id: "image-slide",
     pdfId: "pdf-1",
-    label: "BHRT",
-    shortName: "BHRT",
-    tagline: "Community-led sanitation. Lasting impact.",
-    controlKind: "pages",
-  },
-  {
-    id: "mobile-treatment-unit",
-    pdfId: "pdf-2",
-    label: "Video",
-    shortName: "Video",
-    tagline: "Portable treatment. Lasting impact.",
-    controlKind: "video",
-  },
-  {
-    id: "onsite-treatment-plant",
-    pdfId: "pdf-3",
-    label: "What lies inside?",
-    shortName: "What lies inside?",
-    tagline: "Onsite treatment. Lasting impact.",
-    controlKind: "pages",
-  },
-  {
-    id: "bhrt",
-    pdfId: "pdf-4",
-    label: "USE CASE",
-    shortName: "USE CASE",
-    tagline: "Independent treatment. Lasting impact.",
+    label: "Image Slide",
+    shortName: "Image Slide",
+    tagline: "Interactive slideshow.",
     controlKind: "pages",
   },
 ];
