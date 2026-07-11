@@ -60,7 +60,7 @@ export function PreviewWall() {
       ) : activeDocument?.kind === "images" ? (
         <ImageViewer
           images={activeDocument.images}
-          pageNumber={pages[activeDocument.id]}
+          pageNumber={pages[activeDocument.id as PdfId]}
           label={activeDocument.id}
         />
       ) : (
