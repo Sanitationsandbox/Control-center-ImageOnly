@@ -267,13 +267,79 @@
   backdrop-filter: blur(20px);
 }
 
+.remoteHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
 .remoteTitle {
-  margin: 0 0 24px 0;
+  margin: 0;
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.01em;
   opacity: 0.95;
+}
+
+.powerBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.powerIcon {
+  width: 22px;
+  height: 22px;
+  transition: all 0.25s ease;
+}
+
+/* Power States */
+.powerOn {
+  border: 1.5px solid rgba(0, 255, 200, 0.55);
+  color: #00ffc8;
+  box-shadow: 
+    0 0 12px rgba(0, 255, 200, 0.25),
+    inset 0 0 4px rgba(0, 255, 200, 0.15);
+}
+
+.powerOn:hover:not(:disabled) {
+  background: rgba(0, 255, 200, 0.08);
+  border-color: rgba(0, 255, 200, 0.85);
+  box-shadow: 
+    0 0 18px rgba(0, 255, 200, 0.45),
+    inset 0 0 6px rgba(0, 255, 200, 0.25);
+  transform: scale(1.05);
+}
+
+.powerOff {
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.powerOff:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.7);
+  transform: scale(1.05);
+}
+
+.powerBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.powerBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .remoteButtonsContainer {
