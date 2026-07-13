@@ -1,3 +1,4 @@
+import { Redis } from "@upstash/redis";
 import {
   isPdfDirection,
   isPdfId,
@@ -8,65 +9,103 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const redisUrl =
+  process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const redisToken =
+  process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+
+const redis =
+  redisUrl && redisToken
+    ? new Redis({ url: redisUrl, token: redisToken })
+    : null;
+
+const stateKey = `rubenius:pdf-control:${process.env.VERCEL_ENV ?? "local"}:v1`;
+
 const globalState = globalThis as typeof globalThis & {
   pdfRemoteState?: PdfRemoteState;
 };
 
-function createInitialState(): PdfControlState {
-  return Object.fromEntries(
-    mediaDocuments.map((document) => [
-      document.id,
-      {
-        page: 1,
-        totalPages:
-          document.kind === "images" ? document.items.length : null,
-        updatedAt: Date.now(),
-      },
-    ]),
-  ) as PdfControlState;
-}
-
-const state = (globalState.pdfRemoteState ??= {
-  activePdfId: null,
-  activeUpdatedAt: 0,
-  videoPlaying: false,
-  videoMuted: true,
-  documents: createInitialState(),
-});
-
-state.activeUpdatedAt ??= 0;
-state.videoPlaying ??= false;
-state.videoMuted ??= true;
-
-function markActiveStateChanged() {
-  state.activeUpdatedAt = Math.max(Date.now(), state.activeUpdatedAt + 1);
-}
-
-for (const document of mediaDocuments) {
-  state.documents[document.id] ??= {
-    page: 1,
-    totalPages: document.kind === "images" ? document.items.length : null,
-    updatedAt: Date.now(),
+function createInitialState(): PdfRemoteState {
+  return {
+    activePdfId: null,
+    activeUpdatedAt: 0,
+    videoPlaying: false,
+    videoMuted: true,
+    documents: Object.fromEntries(
+      mediaDocuments.map((document) => [
+        document.id,
+        {
+          page: 1,
+          totalPages:
+            document.kind === "images" ? document.items.length : null,
+          updatedAt: Date.now(),
+        },
+      ]),
+    ) as PdfControlState,
   };
+}
 
-  if (document.kind === "images") {
-    state.documents[document.id].totalPages = document.items.length;
-    state.documents[document.id].page = Math.min(
-      state.documents[document.id].page,
-      document.items.length,
-    );
+function normalizeState(storedState: PdfRemoteState): PdfRemoteState {
+  storedState.activeUpdatedAt ??= 0;
+  storedState.videoPlaying ??= false;
+  storedState.videoMuted ??= true;
+
+  for (const document of mediaDocuments) {
+    storedState.documents[document.id] ??= {
+      page: 1,
+      totalPages: document.kind === "images" ? document.items.length : null,
+      updatedAt: Date.now(),
+    };
+
+    if (document.kind === "images") {
+      storedState.documents[document.id].totalPages = document.items.length;
+      storedState.documents[document.id].page = Math.min(
+        document.items.length,
+        Math.max(1, storedState.documents[document.id].page),
+      );
+    }
   }
+
+  return storedState;
+}
+
+async function readState(): Promise<PdfRemoteState> {
+  if (!redis) {
+    globalState.pdfRemoteState ??= createInitialState();
+    return normalizeState(globalState.pdfRemoteState);
+  }
+
+  const storedState = await redis.get<PdfRemoteState>(stateKey);
+  if (storedState) return normalizeState(storedState);
+
+  const initialState = createInitialState();
+  await redis.set(stateKey, initialState, { nx: true });
+  return normalizeState(
+    (await redis.get<PdfRemoteState>(stateKey)) ?? initialState,
+  );
+}
+
+async function writeState(state: PdfRemoteState) {
+  if (redis) {
+    await redis.set(stateKey, state);
+  } else {
+    globalState.pdfRemoteState = state;
+  }
+}
+
+function markActiveStateChanged(state: PdfRemoteState) {
+  state.activeUpdatedAt = Math.max(Date.now(), state.activeUpdatedAt + 1);
 }
 
 function json(data: unknown, status = 200) {
   return Response.json(data, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
   });
 }
 
 export async function GET() {
-  return json(state);
+  return json(await readState());
 }
 
 export async function POST(request: Request) {
@@ -82,11 +121,14 @@ export async function POST(request: Request) {
     return json({ error: "Invalid PDF command" }, 400);
   }
 
+  const state = await readState();
+
   if (body.action === "clear") {
     state.activePdfId = null;
     state.videoPlaying = false;
     state.videoMuted = true;
-    markActiveStateChanged();
+    markActiveStateChanged(state);
+    await writeState(state);
     return json(state);
   }
 
@@ -96,7 +138,8 @@ export async function POST(request: Request) {
     const page = state.documents[body.pdfId].page;
     state.videoPlaying = document?.items[page - 1]?.kind === "video";
     if (state.videoPlaying) state.videoMuted = true;
-    markActiveStateChanged();
+    markActiveStateChanged(state);
+    await writeState(state);
     return json(state);
   }
 
@@ -108,6 +151,7 @@ export async function POST(request: Request) {
     (body.playback === "play" || body.playback === "pause")
   ) {
     state.videoPlaying = body.playback === "play";
+    await writeState(state);
     return json(state);
   }
 
@@ -119,6 +163,7 @@ export async function POST(request: Request) {
     (body.sound === "on" || body.sound === "off")
   ) {
     state.videoMuted = body.sound === "off";
+    await writeState(state);
     return json(state);
   }
 
@@ -143,12 +188,8 @@ export async function POST(request: Request) {
     mediaDocument?.items[document.page - 1]?.kind === "video";
   if (state.videoPlaying) state.videoMuted = true;
 
-  return json({
-    pdfId: body.pdfId,
-    document,
-    videoPlaying: state.videoPlaying,
-    videoMuted: state.videoMuted,
-  });
+  await writeState(state);
+  return json(state);
 }
 
 export async function PATCH(request: Request) {
@@ -167,10 +208,12 @@ export async function PATCH(request: Request) {
     return json({ error: "Invalid PDF page count" }, 400);
   }
 
+  const state = await readState();
   const document = state.documents[body.pdfId];
   document.totalPages = body.totalPages;
   document.page = Math.min(document.page, body.totalPages);
   document.updatedAt = Date.now();
 
+  await writeState(state);
   return json({ pdfId: body.pdfId, document });
 }

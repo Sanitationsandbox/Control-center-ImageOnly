@@ -33,4 +33,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
+Before deploying, add an **Upstash for Redis** integration to the Vercel project.
+The control API uses its shared Redis state so the preview does not reset when
+Vercel routes polling requests to different serverless instances. Make sure the
+integration provides either of these environment-variable pairs:
+
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+- `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+
+Redeploy after connecting the integration. Local development continues to use
+in-memory state when those variables are absent.
+
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
