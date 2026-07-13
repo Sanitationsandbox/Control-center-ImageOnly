@@ -51,7 +51,7 @@ export function PreviewWall() {
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void refreshPages(), 0);
-    const timer = window.setInterval(() => void refreshPages(), 700);
+    const timer = window.setInterval(() => void refreshPages(), 250);
     return () => {
       window.clearTimeout(initialTimer);
       window.clearInterval(timer);

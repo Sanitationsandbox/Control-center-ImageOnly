@@ -26,34 +26,37 @@ export function ControlCenter() {
   // Determine current display title
   const displayTitle = activePdfId === "pdf-1" ? "Image Slide" : "Control Center";
 
+  const applyRemoteState = useCallback((data: PdfRemoteState) => {
+    if (data.updatedAt <= stateUpdatedAtRef.current) return;
+
+    stateUpdatedAtRef.current = data.updatedAt;
+    setActivePdfId(data.activePdfId);
+    setVideoPlaying(data.videoPlaying);
+    setVideoMuted(data.videoMuted);
+
+    const docState = data.documents["pdf-1"];
+    if (docState) {
+      setCurrentPage(docState.page);
+      setTotalPages(docState.totalPages);
+    }
+  }, []);
+
   const fetchState = useCallback(async () => {
     try {
       const response = await fetch("/api/pdf-control", { cache: "no-store" });
       if (!response.ok) throw new Error("Fetch failed");
       const data = (await response.json()) as PdfRemoteState;
-
-      if (data.updatedAt <= stateUpdatedAtRef.current) return;
-
-      stateUpdatedAtRef.current = data.updatedAt;
-      setActivePdfId(data.activePdfId);
-      setVideoPlaying(data.videoPlaying);
-      setVideoMuted(data.videoMuted);
-      
-      const docState = data.documents["pdf-1"];
-      if (docState) {
-        setCurrentPage(docState.page);
-        setTotalPages(docState.totalPages);
-      }
+      applyRemoteState(data);
     } catch {
       // Ignore errors during polling
     }
-  }, []);
+  }, [applyRemoteState]);
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void fetchState(), 0);
     const timer = setInterval(() => {
       void fetchState();
-    }, 1000);
+    }, 500);
 
     return () => {
       window.clearTimeout(initialTimer);
@@ -84,10 +87,12 @@ export function ControlCenter() {
           action: "navigate",
           pdfId: activePdfId,
           direction,
+          targetPage: nextPage,
         }),
       });
 
       if (!response.ok) throw new Error("Command failed");
+      applyRemoteState((await response.json()) as PdfRemoteState);
     } catch {
       // Rollback optimistic update
       setCurrentPage(prevPage);
@@ -107,10 +112,16 @@ export function ControlCenter() {
       const response = await fetch("/api/pdf-control", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "playback", playback }),
+        body: JSON.stringify({
+          action: "playback",
+          pdfId: activePdfId,
+          targetPage: currentPage,
+          playback,
+        }),
       });
 
       if (!response.ok) throw new Error("Playback command failed");
+      applyRemoteState((await response.json()) as PdfRemoteState);
     } catch {
       setVideoPlaying(wasPlaying);
     } finally {
@@ -132,11 +143,14 @@ export function ControlCenter() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "sound",
+          pdfId: activePdfId,
+          targetPage: currentPage,
           sound,
         }),
       });
 
       if (!response.ok) throw new Error("Sound command failed");
+      applyRemoteState((await response.json()) as PdfRemoteState);
     } catch {
       setVideoMuted(wasMuted);
     } finally {
@@ -163,10 +177,7 @@ export function ControlCenter() {
 
       if (!response.ok) throw new Error("Toggle power failed");
       const data = (await response.json()) as PdfRemoteState;
-      stateUpdatedAtRef.current = data.updatedAt;
-      setActivePdfId(data.activePdfId);
-      setVideoPlaying(data.videoPlaying);
-      setVideoMuted(data.videoMuted);
+      applyRemoteState(data);
     } catch {
       // Rollback optimistic update
       setActivePdfId(activePdfId);

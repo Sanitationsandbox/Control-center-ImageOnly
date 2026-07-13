@@ -125,6 +125,7 @@ export async function POST(request: Request) {
     action?: unknown;
     pdfId?: unknown;
     direction?: unknown;
+    targetPage?: unknown;
     playback?: unknown;
     sound?: unknown;
   } | null;
@@ -139,6 +140,10 @@ export async function POST(request: Request) {
     state.activePdfId = null;
     state.videoPlaying = false;
     state.videoMuted = true;
+    for (const document of mediaDocuments) {
+      state.documents[document.id].page = 1;
+      state.documents[document.id].updatedAt = Date.now();
+    }
     markActiveStateChanged(state);
     markStateChanged(state);
     await writeState(state);
@@ -147,10 +152,10 @@ export async function POST(request: Request) {
 
   if (body.action === "activate" && isPdfId(body.pdfId)) {
     state.activePdfId = body.pdfId;
-    const document = mediaDocuments.find((item) => item.id === body.pdfId);
-    const page = state.documents[body.pdfId].page;
-    state.videoPlaying = document?.items[page - 1]?.kind === "video";
-    if (state.videoPlaying) state.videoMuted = true;
+    state.documents[body.pdfId].page = 1;
+    state.documents[body.pdfId].updatedAt = Date.now();
+    state.videoPlaying = false;
+    state.videoMuted = true;
     markActiveStateChanged(state);
     markStateChanged(state);
     await writeState(state);
@@ -159,11 +164,13 @@ export async function POST(request: Request) {
 
   if (
     body.action === "playback" &&
-    state.activePdfId === "pdf-1" &&
-    mediaDocuments[0].items[state.documents["pdf-1"].page - 1]?.kind ===
-      "video" &&
+    body.pdfId === "pdf-1" &&
+    body.targetPage === mediaDocuments[0].items.length &&
     (body.playback === "play" || body.playback === "pause")
   ) {
+    state.activePdfId = "pdf-1";
+    state.documents["pdf-1"].page = body.targetPage;
+    state.documents["pdf-1"].updatedAt = Date.now();
     state.videoPlaying = body.playback === "play";
     markStateChanged(state);
     await writeState(state);
@@ -172,11 +179,13 @@ export async function POST(request: Request) {
 
   if (
     body.action === "sound" &&
-    state.activePdfId === "pdf-1" &&
-    mediaDocuments[0].items[state.documents["pdf-1"].page - 1]?.kind ===
-      "video" &&
+    body.pdfId === "pdf-1" &&
+    body.targetPage === mediaDocuments[0].items.length &&
     (body.sound === "on" || body.sound === "off")
   ) {
+    state.activePdfId = "pdf-1";
+    state.documents["pdf-1"].page = body.targetPage;
+    state.documents["pdf-1"].updatedAt = Date.now();
     state.videoMuted = body.sound === "off";
     markStateChanged(state);
     await writeState(state);
@@ -192,11 +201,16 @@ export async function POST(request: Request) {
   }
 
   const document = state.documents[body.pdfId];
+  state.activePdfId = body.pdfId;
   const lastPage = document.totalPages ?? Number.MAX_SAFE_INTEGER;
-  const nextPage =
-    body.direction === "next" ? document.page + 1 : document.page - 1;
+  const requestedPage =
+    typeof body.targetPage === "number" && Number.isInteger(body.targetPage)
+      ? body.targetPage
+      : body.direction === "next"
+        ? document.page + 1
+        : document.page - 1;
 
-  document.page = Math.min(lastPage, Math.max(1, nextPage));
+  document.page = Math.min(lastPage, Math.max(1, requestedPage));
   document.updatedAt = Date.now();
 
   const mediaDocument = mediaDocuments.find((item) => item.id === body.pdfId);
