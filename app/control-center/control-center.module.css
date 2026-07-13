@@ -400,3 +400,64 @@
   transform: translateX(4px);
 }
 
+.videoControlSection {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.videoControlLabel {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.videoButtonsContainer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.videoBtn {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 8px 13px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.videoBtn:hover:not(:disabled),
+.activeVideoBtn {
+  color: #5fffe0;
+  border-color: rgba(95, 255, 224, 0.42);
+  background: rgba(95, 255, 224, 0.08);
+}
+
+.videoBtn:focus-visible {
+  outline: 2px solid #5fffe0;
+  outline-offset: 3px;
+}
+
+.videoBtn:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.videoBtnIcon {
+  width: 28px;
+  height: 28px;
+}

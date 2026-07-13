@@ -1,15 +1,26 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { mediaDocuments, type PdfDirection, type PdfId, type PdfRemoteState } from "@/lib/pdf-control";
-import { controlOptions } from "../control-options";
+import {
+  mediaDocuments,
+  type PdfDirection,
+  type PdfId,
+  type PdfRemoteState,
+} from "@/lib/pdf-control";
 import styles from "../control-center.module.css";
+
+const videoPage =
+  mediaDocuments[0].items.findIndex((item) => item.kind === "video") + 1;
 
 export function ControlCenter() {
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number | null>(7);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
   const [isSending, setIsSending] = useState(false);
+
+  const isVideoPage = activePdfId === "pdf-1" && currentPage === videoPage;
 
   // Determine current display title
   const displayTitle = activePdfId === "pdf-1" ? "Image Slide" : "Control Center";
@@ -21,6 +32,8 @@ export function ControlCenter() {
       const data = (await response.json()) as PdfRemoteState;
 
       setActivePdfId(data.activePdfId);
+      setVideoPlaying(data.videoPlaying);
+      setVideoMuted(data.videoMuted);
       
       const docState = data.documents["pdf-1"];
       if (docState) {
@@ -33,15 +46,15 @@ export function ControlCenter() {
   }, []);
 
   useEffect(() => {
-    // Initial fetch
-    void fetchState();
-
-    // Poll state every 1000ms
+    const initialTimer = window.setTimeout(() => void fetchState(), 0);
     const timer = setInterval(() => {
       void fetchState();
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      window.clearTimeout(initialTimer);
+      clearInterval(timer);
+    };
   }, [fetchState]);
 
   async function sendCommand(direction: PdfDirection) {
@@ -74,6 +87,54 @@ export function ControlCenter() {
     } catch {
       // Rollback optimistic update
       setCurrentPage(prevPage);
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  async function sendPlayback(playback: "play" | "pause") {
+    if (isSending || !isVideoPage) return;
+
+    const wasPlaying = videoPlaying;
+    setIsSending(true);
+    setVideoPlaying(playback === "play");
+
+    try {
+      const response = await fetch("/api/pdf-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "playback", playback }),
+      });
+
+      if (!response.ok) throw new Error("Playback command failed");
+    } catch {
+      setVideoPlaying(wasPlaying);
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  async function sendSound(sound: "on" | "off") {
+    if (isSending || !isVideoPage) return;
+
+    const wasMuted = videoMuted;
+    const nextMuted = sound === "off";
+    setIsSending(true);
+    setVideoMuted(nextMuted);
+
+    try {
+      const response = await fetch("/api/pdf-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sound",
+          sound,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Sound command failed");
+    } catch {
+      setVideoMuted(wasMuted);
     } finally {
       setIsSending(false);
     }
@@ -182,6 +243,98 @@ export function ControlCenter() {
             </svg>
           </button>
         </div>
+
+        {isVideoPage ? (
+          <section
+            className={styles.videoControlSection}
+            aria-label="Video controls"
+          >
+            <p className={styles.videoControlLabel}>Video controls</p>
+            <div className={styles.videoButtonsContainer}>
+              <button
+                type="button"
+                className={`${styles.videoBtn} ${videoPlaying ? styles.activeVideoBtn : ""}`}
+                aria-label="Play video"
+                aria-pressed={videoPlaying}
+                disabled={isSending}
+                onClick={() => void sendPlayback("play")}
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className={styles.videoBtnIcon}
+                >
+                  <path d="M8 5v14l11-7z" fill="currentColor" />
+                </svg>
+                <span>Play</span>
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.videoBtn} ${!videoPlaying ? styles.activeVideoBtn : ""}`}
+                aria-label="Pause video"
+                aria-pressed={!videoPlaying}
+                disabled={isSending}
+                onClick={() => void sendPlayback("pause")}
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className={styles.videoBtnIcon}
+                >
+                  <path d="M7 5h4v14H7zm6 0h4v14h-4z" fill="currentColor" />
+                </svg>
+                <span>Pause</span>
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.videoBtn} ${!videoMuted ? styles.activeVideoBtn : ""}`}
+                aria-label="Sound on"
+                aria-pressed={!videoMuted}
+                disabled={isSending}
+                onClick={() => void sendSound("on")}
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className={styles.videoBtnIcon}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <path d="M11 5 6 9H3v6h3l5 4z" />
+                  <path d="M15 9a4 4 0 0 1 0 6m3-9a8 8 0 0 1 0 12" />
+                </svg>
+                <span>Sound on</span>
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.videoBtn} ${videoMuted ? styles.activeVideoBtn : ""}`}
+                aria-label="Sound off"
+                aria-pressed={videoMuted}
+                disabled={isSending}
+                onClick={() => void sendSound("off")}
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className={styles.videoBtnIcon}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <path d="M11 5 6 9H3v6h3l5 4z" />
+                  <path d="m17 9 4 4m0-4-4 4" />
+                </svg>
+                <span>Sound off</span>
+              </button>
+            </div>
+          </section>
+        ) : null}
       </div>
     </main>
   );

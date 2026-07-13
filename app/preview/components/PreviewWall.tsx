@@ -8,7 +8,6 @@ import {
 } from "@/lib/pdf-control";
 import styles from "../preview.module.css";
 import { ImageViewer } from "./ImageViewer";
-import { VideoViewer } from "./VideoViewer";
 
 const initialPages = Object.fromEntries(
   mediaDocuments.map((document) => [document.id, 1]),
@@ -18,6 +17,7 @@ export function PreviewWall() {
   const [pages, setPages] = useState(initialPages);
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
 
   const refreshPages = useCallback(async () => {
     try {
@@ -27,6 +27,7 @@ export function PreviewWall() {
       const data = (await response.json()) as PdfRemoteState;
       setActivePdfId(data.activePdfId);
       setVideoPlaying(data.videoPlaying);
+      setVideoMuted(data.videoMuted);
       setPages(
         Object.fromEntries(
           mediaDocuments.map((document) => [
@@ -42,7 +43,7 @@ export function PreviewWall() {
 
   const activeDocument = mediaDocuments.find(
     (document) => document.id === activePdfId,
-  ) as any;
+  );
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void refreshPages(), 0);
@@ -55,13 +56,13 @@ export function PreviewWall() {
 
   return (
     <main className={styles.wall}>
-      {activeDocument?.kind === "video" ? (
-        <VideoViewer src={activeDocument.src} playing={videoPlaying} />
-      ) : activeDocument?.kind === "images" ? (
+      {activeDocument?.kind === "images" ? (
         <ImageViewer
           items={activeDocument.items}
-          pageNumber={pages[activeDocument.id as PdfId]}
+          pageNumber={pages[activeDocument.id]}
           label={activeDocument.id}
+          videoPlaying={videoPlaying}
+          videoMuted={videoMuted}
         />
       ) : (
         <PreviewSplash />

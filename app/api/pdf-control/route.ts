@@ -29,10 +29,12 @@ function createInitialState(): PdfControlState {
 const state = (globalState.pdfRemoteState ??= {
   activePdfId: null,
   videoPlaying: false,
+  videoMuted: true,
   documents: createInitialState(),
 });
 
 state.videoPlaying ??= false;
+state.videoMuted ??= true;
 
 for (const document of mediaDocuments) {
   state.documents[document.id] ??= {
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
     pdfId?: unknown;
     direction?: unknown;
     playback?: unknown;
+    sound?: unknown;
   } | null;
 
   if (!body) {
@@ -76,21 +79,38 @@ export async function POST(request: Request) {
   if (body.action === "clear") {
     state.activePdfId = null;
     state.videoPlaying = false;
+    state.videoMuted = true;
     return json(state);
   }
 
   if (body.action === "activate" && isPdfId(body.pdfId)) {
     state.activePdfId = body.pdfId;
-    state.videoPlaying = (body.pdfId as string) === "pdf-2";
+    const document = mediaDocuments.find((item) => item.id === body.pdfId);
+    const page = state.documents[body.pdfId].page;
+    state.videoPlaying = document?.items[page - 1]?.kind === "video";
+    if (state.videoPlaying) state.videoMuted = true;
     return json(state);
   }
 
   if (
     body.action === "playback" &&
-    (state.activePdfId as string) === "pdf-2" &&
+    state.activePdfId === "pdf-1" &&
+    mediaDocuments[0].items[state.documents["pdf-1"].page - 1]?.kind ===
+      "video" &&
     (body.playback === "play" || body.playback === "pause")
   ) {
     state.videoPlaying = body.playback === "play";
+    return json(state);
+  }
+
+  if (
+    body.action === "sound" &&
+    state.activePdfId === "pdf-1" &&
+    mediaDocuments[0].items[state.documents["pdf-1"].page - 1]?.kind ===
+      "video" &&
+    (body.sound === "on" || body.sound === "off")
+  ) {
+    state.videoMuted = body.sound === "off";
     return json(state);
   }
 
@@ -110,7 +130,17 @@ export async function POST(request: Request) {
   document.page = Math.min(lastPage, Math.max(1, nextPage));
   document.updatedAt = Date.now();
 
-  return json({ pdfId: body.pdfId, document });
+  const mediaDocument = mediaDocuments.find((item) => item.id === body.pdfId);
+  state.videoPlaying =
+    mediaDocument?.items[document.page - 1]?.kind === "video";
+  if (state.videoPlaying) state.videoMuted = true;
+
+  return json({
+    pdfId: body.pdfId,
+    document,
+    videoPlaying: state.videoPlaying,
+    videoMuted: state.videoMuted,
+  });
 }
 
 export async function PATCH(request: Request) {

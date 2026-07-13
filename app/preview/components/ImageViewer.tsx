@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MediaItem } from "@/lib/pdf-control";
 import styles from "../preview.module.css";
 
@@ -9,12 +9,16 @@ type ImageViewerProps = {
   items: readonly MediaItem[];
   pageNumber: number;
   label: string;
+  videoPlaying: boolean;
+  videoMuted: boolean;
 };
 
 export function ImageViewer({
   items,
   pageNumber,
   label,
+  videoPlaying,
+  videoMuted,
 }: ImageViewerProps) {
   const safeIndex = Math.min(items.length - 1, Math.max(0, pageNumber - 1));
   const item = items[safeIndex];
@@ -26,7 +30,11 @@ export function ImageViewer({
     >
       <div key={item.src} className={styles.imageSlide}>
         {item.kind === "video" ? (
-          <SequenceVideo src={item.src} />
+          <SequenceVideo
+            src={item.src}
+            playing={videoPlaying}
+            muted={videoMuted}
+          />
         ) : (
           <Image
             src={item.src}
@@ -42,17 +50,23 @@ export function ImageViewer({
   );
 }
 
-function SequenceVideo({ src }: { src: string }) {
+type SequenceVideoProps = {
+  src: string;
+  playing: boolean;
+  muted: boolean;
+};
+
+function SequenceVideo({ src, playing, muted }: SequenceVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
-  const playWithSound = async () => {
+  const playVideo = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
 
-    video.defaultMuted = false;
-    video.muted = false;
-    video.volume = 1;
+    video.defaultMuted = muted;
+    video.muted = muted;
+    if (!muted) video.volume = 1;
 
     try {
       await video.play();
@@ -60,17 +74,25 @@ function SequenceVideo({ src }: { src: string }) {
     } catch {
       setAutoplayBlocked(true);
     }
-  };
+  }, [muted]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    video.defaultMuted = false;
-    video.muted = false;
-    video.volume = 1;
-    void video.play().catch(() => setAutoplayBlocked(true));
-  }, [src]);
+    video.defaultMuted = muted;
+    video.muted = muted;
+    if (!muted) video.volume = 1;
+
+    if (playing) {
+      void video
+        .play()
+        .then(() => setAutoplayBlocked(false))
+        .catch(() => setAutoplayBlocked(true));
+    } else {
+      video.pause();
+    }
+  }, [muted, playVideo, playing, src]);
 
   return (
     <>
@@ -79,26 +101,23 @@ function SequenceVideo({ src }: { src: string }) {
         src={src}
         controls
         autoPlay
+        muted={muted}
         playsInline
         preload="auto"
         className={styles.sequenceVideo}
-        onCanPlay={() => void playWithSound()}
-        onVolumeChange={(event) => {
-          if (event.currentTarget.muted || event.currentTarget.volume === 0) {
-            event.currentTarget.muted = false;
-            event.currentTarget.volume = 1;
-          }
+        onCanPlay={() => {
+          if (playing) void playVideo();
         }}
       >
         Your browser does not support the video tag.
       </video>
-      {autoplayBlocked ? (
+      {playing && autoplayBlocked ? (
         <button
           type="button"
           className={styles.autoplayFallback}
-          onClick={() => void playWithSound()}
+          onClick={() => void playVideo()}
         >
-          Play video with sound
+          Play video{muted ? "" : " with sound"}
         </button>
       ) : null}
     </>
