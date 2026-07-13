@@ -29,7 +29,6 @@ export function ImageViewer({
             src={item.src}
             controls
             autoPlay
-            muted
             playsInline
             preload="auto"
             className={styles.sequenceVideo}
