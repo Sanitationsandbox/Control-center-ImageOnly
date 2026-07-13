@@ -19,7 +19,7 @@ function createInitialState(): PdfControlState {
       {
         page: 1,
         totalPages:
-          document.kind === "images" ? document.images.length : null,
+          document.kind === "images" ? document.items.length : null,
         updatedAt: Date.now(),
       },
     ]),
@@ -37,15 +37,15 @@ state.videoPlaying ??= false;
 for (const document of mediaDocuments) {
   state.documents[document.id] ??= {
     page: 1,
-    totalPages: document.kind === "images" ? document.images.length : null,
+    totalPages: document.kind === "images" ? document.items.length : null,
     updatedAt: Date.now(),
   };
 
   if (document.kind === "images") {
-    state.documents[document.id].totalPages = document.images.length;
+    state.documents[document.id].totalPages = document.items.length;
     state.documents[document.id].page = Math.min(
       state.documents[document.id].page,
-      document.images.length,
+      document.items.length,
     );
   }
 }

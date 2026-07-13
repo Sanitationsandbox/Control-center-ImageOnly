@@ -2,17 +2,23 @@ export const mediaDocuments = [
   {
     id: "pdf-1",
     kind: "images",
-    images: [
-      "/images/1.png",
-      "/images/2.png",
-      "/images/3.png",
-      "/images/4.png",
-      "/images/5.png",
-      "/images/6.png",
-      "/images/7.png",
+    items: [
+      { kind: "image", src: "/images/1.png" },
+      { kind: "image", src: "/images/2.png" },
+      { kind: "image", src: "/images/3.png" },
+      { kind: "image", src: "/images/4.png" },
+      { kind: "image", src: "/images/5.png" },
+      { kind: "image", src: "/images/6.png" },
+      { kind: "image", src: "/images/7.png" },
+      {
+        kind: "video",
+        src: "/images/WhatsApp%20Video%202026-07-13%20at%2011.43.07.mp4",
+      },
     ],
   },
 ] as const;
+
+export type MediaItem = (typeof mediaDocuments)[number]["items"][number];
 
 export type PdfId = (typeof mediaDocuments)[number]["id"];
 export type PdfDirection = "previous" | "next";

@@ -59,7 +59,7 @@ export function PreviewWall() {
         <VideoViewer src={activeDocument.src} playing={videoPlaying} />
       ) : activeDocument?.kind === "images" ? (
         <ImageViewer
-          images={activeDocument.images}
+          items={activeDocument.items}
           pageNumber={pages[activeDocument.id as PdfId]}
           label={activeDocument.id}
         />
