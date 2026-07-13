@@ -18,7 +18,7 @@ export function PreviewWall() {
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
-  const activeUpdatedAtRef = useRef(0);
+  const stateUpdatedAtRef = useRef(-1);
 
   const refreshPages = useCallback(async () => {
     try {
@@ -26,12 +26,12 @@ export function PreviewWall() {
       if (!response.ok) throw new Error("State request failed");
 
       const data = (await response.json()) as PdfRemoteState;
-      if (data.activeUpdatedAt >= activeUpdatedAtRef.current) {
-        activeUpdatedAtRef.current = data.activeUpdatedAt;
-        setActivePdfId(data.activePdfId);
-        setVideoPlaying(data.videoPlaying);
-        setVideoMuted(data.videoMuted);
-      }
+      if (data.updatedAt <= stateUpdatedAtRef.current) return;
+
+      stateUpdatedAtRef.current = data.updatedAt;
+      setActivePdfId(data.activePdfId);
+      setVideoPlaying(data.videoPlaying);
+      setVideoMuted(data.videoMuted);
       setPages(
         Object.fromEntries(
           mediaDocuments.map((document) => [

@@ -27,6 +27,7 @@ const globalState = globalThis as typeof globalThis & {
 
 function createInitialState(): PdfRemoteState {
   return {
+    updatedAt: Date.now(),
     activePdfId: null,
     activeUpdatedAt: 0,
     videoPlaying: false,
@@ -66,6 +67,13 @@ function normalizeState(storedState: PdfRemoteState): PdfRemoteState {
     }
   }
 
+  storedState.updatedAt ??= Math.max(
+    storedState.activeUpdatedAt,
+    ...Object.values(storedState.documents).map(
+      (document) => document.updatedAt,
+    ),
+  );
+
   return storedState;
 }
 
@@ -95,6 +103,10 @@ async function writeState(state: PdfRemoteState) {
 
 function markActiveStateChanged(state: PdfRemoteState) {
   state.activeUpdatedAt = Math.max(Date.now(), state.activeUpdatedAt + 1);
+}
+
+function markStateChanged(state: PdfRemoteState) {
+  state.updatedAt = Math.max(Date.now(), state.updatedAt + 1);
 }
 
 function json(data: unknown, status = 200) {
@@ -128,6 +140,7 @@ export async function POST(request: Request) {
     state.videoPlaying = false;
     state.videoMuted = true;
     markActiveStateChanged(state);
+    markStateChanged(state);
     await writeState(state);
     return json(state);
   }
@@ -139,6 +152,7 @@ export async function POST(request: Request) {
     state.videoPlaying = document?.items[page - 1]?.kind === "video";
     if (state.videoPlaying) state.videoMuted = true;
     markActiveStateChanged(state);
+    markStateChanged(state);
     await writeState(state);
     return json(state);
   }
@@ -151,6 +165,7 @@ export async function POST(request: Request) {
     (body.playback === "play" || body.playback === "pause")
   ) {
     state.videoPlaying = body.playback === "play";
+    markStateChanged(state);
     await writeState(state);
     return json(state);
   }
@@ -163,6 +178,7 @@ export async function POST(request: Request) {
     (body.sound === "on" || body.sound === "off")
   ) {
     state.videoMuted = body.sound === "off";
+    markStateChanged(state);
     await writeState(state);
     return json(state);
   }
@@ -188,6 +204,7 @@ export async function POST(request: Request) {
     mediaDocument?.items[document.page - 1]?.kind === "video";
   if (state.videoPlaying) state.videoMuted = true;
 
+  markStateChanged(state);
   await writeState(state);
   return json(state);
 }
@@ -214,6 +231,7 @@ export async function PATCH(request: Request) {
   document.page = Math.min(document.page, body.totalPages);
   document.updatedAt = Date.now();
 
+  markStateChanged(state);
   await writeState(state);
   return json({ pdfId: body.pdfId, document });
 }

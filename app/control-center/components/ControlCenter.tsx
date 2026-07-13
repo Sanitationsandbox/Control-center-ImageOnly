@@ -19,7 +19,7 @@ export function ControlCenter() {
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const activeUpdatedAtRef = useRef(0);
+  const stateUpdatedAtRef = useRef(-1);
 
   const isVideoPage = activePdfId === "pdf-1" && currentPage === videoPage;
 
@@ -32,12 +32,12 @@ export function ControlCenter() {
       if (!response.ok) throw new Error("Fetch failed");
       const data = (await response.json()) as PdfRemoteState;
 
-      if (data.activeUpdatedAt >= activeUpdatedAtRef.current) {
-        activeUpdatedAtRef.current = data.activeUpdatedAt;
-        setActivePdfId(data.activePdfId);
-        setVideoPlaying(data.videoPlaying);
-        setVideoMuted(data.videoMuted);
-      }
+      if (data.updatedAt <= stateUpdatedAtRef.current) return;
+
+      stateUpdatedAtRef.current = data.updatedAt;
+      setActivePdfId(data.activePdfId);
+      setVideoPlaying(data.videoPlaying);
+      setVideoMuted(data.videoMuted);
       
       const docState = data.documents["pdf-1"];
       if (docState) {
@@ -163,7 +163,7 @@ export function ControlCenter() {
 
       if (!response.ok) throw new Error("Toggle power failed");
       const data = (await response.json()) as PdfRemoteState;
-      activeUpdatedAtRef.current = data.activeUpdatedAt;
+      stateUpdatedAtRef.current = data.updatedAt;
       setActivePdfId(data.activePdfId);
       setVideoPlaying(data.videoPlaying);
       setVideoMuted(data.videoMuted);

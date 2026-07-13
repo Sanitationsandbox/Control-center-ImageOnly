@@ -32,6 +32,7 @@ export type PdfPageState = {
 export type PdfControlState = Record<PdfId, PdfPageState>;
 
 export type PdfRemoteState = {
+  updatedAt: number;
   activePdfId: PdfId | null;
   activeUpdatedAt: number;
   videoPlaying: boolean;
