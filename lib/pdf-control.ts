@@ -12,7 +12,7 @@ export const mediaDocuments = [
       { kind: "image", src: "/images/7.png" },
       {
         kind: "video",
-        src: "/images/WhatsApp%20Video%202026-07-13%20at%2011.43.07.mp4",
+        src: "/video0111.mp4",
       },
     ],
   },
