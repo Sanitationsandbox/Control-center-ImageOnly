@@ -64,17 +64,14 @@ function SequenceVideo({ src, playing, muted }: SequenceVideoProps) {
     const video = videoRef.current;
     if (!video) return;
 
-    video.defaultMuted = muted;
-    video.muted = muted;
-    if (!muted) video.volume = 1;
-
     try {
+      if (video.ended) video.currentTime = 0;
       await video.play();
       setAutoplayBlocked(false);
     } catch {
       setAutoplayBlocked(true);
     }
-  }, [muted]);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -83,8 +80,14 @@ function SequenceVideo({ src, playing, muted }: SequenceVideoProps) {
     video.defaultMuted = muted;
     video.muted = muted;
     if (!muted) video.volume = 1;
+  }, [muted]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
     if (playing) {
+      if (video.ended) video.currentTime = 0;
       void video
         .play()
         .then(() => setAutoplayBlocked(false))
@@ -92,7 +95,7 @@ function SequenceVideo({ src, playing, muted }: SequenceVideoProps) {
     } else {
       video.pause();
     }
-  }, [muted, playVideo, playing, src]);
+  }, [playVideo, playing, src]);
 
   return (
     <>

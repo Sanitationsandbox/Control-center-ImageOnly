@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   mediaDocuments,
   type PdfRemoteState,
@@ -18,6 +18,7 @@ export function PreviewWall() {
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
+  const activeUpdatedAtRef = useRef(0);
 
   const refreshPages = useCallback(async () => {
     try {
@@ -25,9 +26,12 @@ export function PreviewWall() {
       if (!response.ok) throw new Error("State request failed");
 
       const data = (await response.json()) as PdfRemoteState;
-      setActivePdfId(data.activePdfId);
-      setVideoPlaying(data.videoPlaying);
-      setVideoMuted(data.videoMuted);
+      if (data.activeUpdatedAt >= activeUpdatedAtRef.current) {
+        activeUpdatedAtRef.current = data.activeUpdatedAt;
+        setActivePdfId(data.activePdfId);
+        setVideoPlaying(data.videoPlaying);
+        setVideoMuted(data.videoMuted);
+      }
       setPages(
         Object.fromEntries(
           mediaDocuments.map((document) => [

@@ -28,13 +28,19 @@ function createInitialState(): PdfControlState {
 
 const state = (globalState.pdfRemoteState ??= {
   activePdfId: null,
+  activeUpdatedAt: 0,
   videoPlaying: false,
   videoMuted: true,
   documents: createInitialState(),
 });
 
+state.activeUpdatedAt ??= 0;
 state.videoPlaying ??= false;
 state.videoMuted ??= true;
+
+function markActiveStateChanged() {
+  state.activeUpdatedAt = Math.max(Date.now(), state.activeUpdatedAt + 1);
+}
 
 for (const document of mediaDocuments) {
   state.documents[document.id] ??= {
@@ -80,6 +86,7 @@ export async function POST(request: Request) {
     state.activePdfId = null;
     state.videoPlaying = false;
     state.videoMuted = true;
+    markActiveStateChanged();
     return json(state);
   }
 
@@ -89,6 +96,7 @@ export async function POST(request: Request) {
     const page = state.documents[body.pdfId].page;
     state.videoPlaying = document?.items[page - 1]?.kind === "video";
     if (state.videoPlaying) state.videoMuted = true;
+    markActiveStateChanged();
     return json(state);
   }
 
