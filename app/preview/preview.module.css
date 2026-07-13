@@ -68,6 +68,21 @@
   object-fit: contain;
 }
 
+.autoplayFallback {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  padding: 14px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  color: #fff;
+  border-radius: 999px;
+  background: rgba(7, 13, 18, 0.88);
+  font: inherit;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
 @keyframes image-enter {
   from {
     opacity: 0;

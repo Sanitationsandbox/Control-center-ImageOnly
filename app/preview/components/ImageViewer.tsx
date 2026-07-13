@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import type { MediaItem } from "@/lib/pdf-control";
 import styles from "../preview.module.css";
 
@@ -25,16 +26,7 @@ export function ImageViewer({
     >
       <div key={item.src} className={styles.imageSlide}>
         {item.kind === "video" ? (
-          <video
-            src={item.src}
-            controls
-            autoPlay
-            playsInline
-            preload="auto"
-            className={styles.sequenceVideo}
-          >
-            Your browser does not support the video tag.
-          </video>
+          <SequenceVideo src={item.src} />
         ) : (
           <Image
             src={item.src}
@@ -47,5 +39,68 @@ export function ImageViewer({
         )}
       </div>
     </section>
+  );
+}
+
+function SequenceVideo({ src }: { src: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+
+  const playWithSound = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.defaultMuted = false;
+    video.muted = false;
+    video.volume = 1;
+
+    try {
+      await video.play();
+      setAutoplayBlocked(false);
+    } catch {
+      setAutoplayBlocked(true);
+    }
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.defaultMuted = false;
+    video.muted = false;
+    video.volume = 1;
+    void video.play().catch(() => setAutoplayBlocked(true));
+  }, [src]);
+
+  return (
+    <>
+      <video
+        ref={videoRef}
+        src={src}
+        controls
+        autoPlay
+        playsInline
+        preload="auto"
+        className={styles.sequenceVideo}
+        onCanPlay={() => void playWithSound()}
+        onVolumeChange={(event) => {
+          if (event.currentTarget.muted || event.currentTarget.volume === 0) {
+            event.currentTarget.muted = false;
+            event.currentTarget.volume = 1;
+          }
+        }}
+      >
+        Your browser does not support the video tag.
+      </video>
+      {autoplayBlocked ? (
+        <button
+          type="button"
+          className={styles.autoplayFallback}
+          onClick={() => void playWithSound()}
+        >
+          Play video with sound
+        </button>
+      ) : null}
+    </>
   );
 }
