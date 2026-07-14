@@ -24,6 +24,10 @@ export const mediaDocuments = [
       { kind: "image", src: "/images/19.jpg" },
       { kind: "image", src: "/images/20.jpg" },
       { kind: "image", src: "/images/21.jpg" },
+      {
+        kind: "video",
+        src: "/video0111.mp4",
+      },
     ],
   },
 ] as const;
