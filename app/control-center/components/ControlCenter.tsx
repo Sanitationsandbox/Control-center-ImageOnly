@@ -9,19 +9,19 @@ import {
 } from "@/lib/pdf-control";
 import styles from "../control-center.module.css";
 
-const videoPage =
-  mediaDocuments[0].items.findIndex((item) => item.kind === "video") + 1;
+// All items are images — no video page in this build
 
 export function ControlCenter() {
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number | null>(7);
+  const [totalPages, setTotalPages] = useState<number | null>(21);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const stateUpdatedAtRef = useRef(-1);
 
-  const isVideoPage = activePdfId === "pdf-1" && currentPage === videoPage;
+  // No video items — isVideoPage is always false
+  const isVideoPage = false;
 
   // Determine current display title
   const displayTitle = activePdfId === "pdf-1" ? "Image Slide" : "Control Center";
