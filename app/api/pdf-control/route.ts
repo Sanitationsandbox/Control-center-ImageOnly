@@ -1,10 +1,10 @@
 import {
   isPdfDirection,
   isPdfId,
-  mediaDocuments,
   type PdfControlState,
   type PdfRemoteState,
 } from "@/lib/pdf-control";
+import { getDocuments } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +13,9 @@ const globalState = globalThis as typeof globalThis & {
 };
 
 function createInitialState(): PdfControlState {
+  const docs = getDocuments();
   return Object.fromEntries(
-    mediaDocuments.map((document) => [
+    docs.map((document) => [
       document.id,
       {
         page: 1,
@@ -34,17 +35,18 @@ const state = (globalState.pdfRemoteState ??= {
 
 state.videoPlaying ??= false;
 
-for (const document of mediaDocuments) {
-  state.documents[document.id] ??= {
+const initialDocs = getDocuments();
+for (const document of initialDocs) {
+  state.documents[document.id as any] ??= {
     page: 1,
     totalPages: document.kind === "images" ? document.images.length : null,
     updatedAt: Date.now(),
   };
 
   if (document.kind === "images") {
-    state.documents[document.id].totalPages = document.images.length;
-    state.documents[document.id].page = Math.min(
-      state.documents[document.id].page,
+    state.documents[document.id as any].totalPages = document.images.length;
+    state.documents[document.id as any].page = Math.min(
+      state.documents[document.id as any].page,
       document.images.length,
     );
   }
@@ -58,7 +60,28 @@ function json(data: unknown, status = 200) {
 }
 
 export async function GET() {
-  return json(state);
+  const docs = getDocuments();
+  // Always sync status with current DB state
+  for (const document of docs) {
+    state.documents[document.id as any] ??= {
+      page: 1,
+      totalPages: document.kind === "images" ? document.images.length : null,
+      updatedAt: Date.now(),
+    };
+
+    if (document.kind === "images") {
+      state.documents[document.id as any].totalPages = document.images.length;
+      state.documents[document.id as any].page = Math.min(
+        state.documents[document.id as any].page,
+        document.images.length,
+      );
+    }
+  }
+
+  return json({
+    ...state,
+    mediaDocuments: docs, // return the dynamic list
+  });
 }
 
 export async function POST(request: Request) {
@@ -102,7 +125,15 @@ export async function POST(request: Request) {
     return json({ error: "Invalid PDF command" }, 400);
   }
 
+  // Reload current DB configuration to ensure correct totalPages
+  const docs = getDocuments();
+  const matchedDoc = docs.find((d) => d.id === body.pdfId);
   const document = state.documents[body.pdfId];
+
+  if (matchedDoc && matchedDoc.kind === "images") {
+    document.totalPages = matchedDoc.images.length;
+  }
+
   const lastPage = document.totalPages ?? Number.MAX_SAFE_INTEGER;
   const nextPage =
     body.direction === "next" ? document.page + 1 : document.page - 1;
