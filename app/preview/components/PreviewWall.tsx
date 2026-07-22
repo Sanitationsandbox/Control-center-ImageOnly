@@ -3,19 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   mediaDocuments,
-  type PdfRemoteState,
   type PdfId,
 } from "@/lib/pdf-control";
 import styles from "../preview.module.css";
 import { ImageViewer } from "./ImageViewer";
 import { VideoViewer } from "./VideoViewer";
 
-const initialPages = Object.fromEntries(
-  mediaDocuments.map((document) => [document.id, 1]),
-) as Record<PdfId, number>;
-
 export function PreviewWall() {
-  const [pages, setPages] = useState(initialPages);
+  const [mediaDocs, setMediaDocs] = useState<any[]>(() => [...mediaDocuments]);
+  const [pages, setPages] = useState<Record<string, number>>(() =>
+    Object.fromEntries(mediaDocuments.map((document) => [document.id, 1]))
+  );
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
 
@@ -24,25 +22,29 @@ export function PreviewWall() {
       const response = await fetch("/api/pdf-control", { cache: "no-store" });
       if (!response.ok) throw new Error("State request failed");
 
-      const data = (await response.json()) as PdfRemoteState;
+      const data = (await response.json()) as any;
       setActivePdfId(data.activePdfId);
       setVideoPlaying(data.videoPlaying);
+
+      const docs = data.mediaDocuments || mediaDocuments;
+      setMediaDocs(docs);
+
       setPages(
         Object.fromEntries(
-          mediaDocuments.map((document) => [
+          docs.map((document: any) => [
             document.id,
-            data.documents[document.id].page,
+            data.documents[document.id]?.page ?? 1,
           ]),
-        ) as Record<PdfId, number>,
+        ) as Record<string, number>,
       );
     } catch {
       // Ignore API offline errors silently
     }
   }, []);
 
-  const activeDocument = mediaDocuments.find(
+  const activeDocument = mediaDocs.find(
     (document) => document.id === activePdfId,
-  ) as any;
+  );
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void refreshPages(), 0);
@@ -60,7 +62,7 @@ export function PreviewWall() {
       ) : activeDocument?.kind === "images" ? (
         <ImageViewer
           images={activeDocument.images}
-          pageNumber={pages[activeDocument.id as PdfId]}
+          pageNumber={pages[activeDocument.id]}
           label={activeDocument.id}
         />
       ) : (
