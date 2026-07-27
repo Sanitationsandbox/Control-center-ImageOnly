@@ -1,0 +1,797 @@
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: clamp(20px, 4vw, 60px);
+  background:
+    radial-gradient(ellipse 46% 22% at 30% 10%, rgba(0, 255, 201, 0.5), transparent 70%),
+    radial-gradient(ellipse 52% 22% at 78% 68%, rgba(0, 243, 208, 0.5), transparent 72%),
+    radial-gradient(ellipse 50% 22% at 22% 84%, rgba(0, 226, 192, 0.48), transparent 70%),
+    linear-gradient(135deg, #0d1522 0%, #1c2637 48%, #0d1422 100%);
+  color: #ffffff;
+  font-family: var(--font-sans), sans-serif;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+.glow {
+  position: absolute;
+  z-index: -1;
+  width: 48vw;
+  height: 34vw;
+  min-width: 420px;
+  min-height: 280px;
+  border-radius: 50%;
+  background: rgba(0, 255, 204, 0.15);
+  filter: blur(80px);
+  transform: rotate(-26deg);
+  pointer-events: none;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 20px;
+}
+
+.title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #a2ffd0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.title span {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(95, 255, 224, 0.8);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.navLink {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.navLink:hover {
+  background: rgba(95, 255, 224, 0.1);
+  border-color: rgba(95, 255, 224, 0.4);
+  color: #5fffe0;
+  transform: translateY(-2px);
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+@media (max-width: 900px) {
+  .dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cardTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cardTitle svg {
+  color: #5fffe0;
+}
+
+/* Status Card specific styling */
+.statusOverview {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dotActive {
+  background-color: #00ffc8;
+  box-shadow: 0 0 8px #00ffc8;
+}
+
+.dotInactive {
+  background-color: #888888;
+}
+
+.statusText {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+}
+
+.statusText strong {
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.previewContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #090e15;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.previewEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+  gap: 8px;
+}
+
+.previewImage {
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
+}
+
+.controlsRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btnPrimary {
+  background: #00ffc8;
+  color: #0b121c;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #2effd5;
+  box-shadow: 0 0 15px rgba(0, 255, 200, 0.4);
+  transform: translateY(-1px);
+}
+
+.btnSecondary {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.btnDanger {
+  background: rgba(255, 78, 78, 0.15);
+  border-color: rgba(255, 78, 78, 0.3);
+  color: #ff5e5e;
+}
+
+.btnDanger:hover:not(:disabled) {
+  background: rgba(255, 78, 78, 0.25);
+  border-color: rgba(255, 78, 78, 0.5);
+  box-shadow: 0 0 12px rgba(255, 78, 78, 0.2);
+}
+
+.btnIcon {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btnIcon:hover:not(:disabled) {
+  background: rgba(95, 255, 224, 0.08);
+  border-color: rgba(95, 255, 224, 0.4);
+  color: #5fffe0;
+  transform: translateY(-1px);
+}
+
+.btn:disabled, .btnIcon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Upload zone styles */
+.uploadZone {
+  flex: 1;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.01);
+  transition: all 0.2s ease;
+  min-height: 180px;
+}
+
+.uploadZoneActive {
+  border-color: #00ffc8;
+  background: rgba(0, 255, 200, 0.05);
+  box-shadow: 0 0 20px rgba(0, 255, 200, 0.05);
+}
+
+.uploadZone svg {
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 12px;
+  transition: color 0.2s ease;
+}
+
+.uploadZoneActive svg {
+  color: #00ffc8;
+}
+
+.uploadText {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 4px 0;
+}
+
+.uploadSubtext {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+}
+
+.uploadProgressContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progressBarBg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: #00ffc8;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+/* Slides table section */
+.tableContainer {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+}
+
+.tableHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tableTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.slidesTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.slidesTable th {
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.slidesTable td {
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.rowActive {
+  background: rgba(0, 255, 200, 0.03);
+}
+
+.tableThumb {
+  position: relative;
+  width: 80px;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #090e15;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tableThumbImg {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.slideBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.slideBadgeActive {
+  background: #00ffc8;
+  color: #0b121c;
+  box-shadow: 0 0 10px rgba(0, 255, 200, 0.3);
+}
+
+.filePath {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  word-break: break-all;
+}
+
+.tableActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Toast Message */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #111b2b;
+  border: 1px solid rgba(0, 255, 200, 0.3);
+  border-radius: 12px;
+  padding: 14px 24px;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toastShow {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toastSuccess {
+  border-color: rgba(0, 255, 200, 0.5);
+}
+
+.toastError {
+  border-color: rgba(255, 78, 78, 0.5);
+}
+
+/* Modal UI Styles */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 26, 0.8);
+  backdrop-filter: blur(15px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalContent {
+  background: linear-gradient(135deg, rgba(20, 30, 48, 0.95) 0%, rgba(13, 21, 34, 0.97) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  width: 100%;
+  max-width: 580px;
+  padding: 32px;
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(20px);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modalTitle svg {
+  color: #00ffc8;
+}
+
+.modalClose {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.modalClose:hover {
+  background: rgba(255, 78, 78, 0.15);
+  border-color: rgba(255, 78, 78, 0.3);
+  color: #ff5e5e;
+}
+
+/* Selected Files Queue styles */
+.fileQueue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.fileQueue::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fileQueue::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+
+.fileQueue::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.fileQueueItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 75%;
+}
+
+.fileInfo svg {
+  color: #5fffe0;
+  flex-shrink: 0;
+}
+
+.fileName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileSize {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+}
+
+.fileRemoveBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.fileRemoveBtn:hover {
+  color: #ff5e5e;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Drag Sequence Editor Strip */
+.dragStrip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 10px 5px 20px 5px;
+}
+
+.dragStrip::-webkit-scrollbar {
+  height: 8px;
+}
+
+.dragStrip::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+.dragStrip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.dragStrip::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dragItem {
+  position: relative;
+  flex: 0 0 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dragItem:active {
+  cursor: grabbing;
+}
+
+.dragCard {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dragItem:hover .dragCard {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(95, 255, 224, 0.3);
+  transform: translateY(-4px);
+}
+
+.dragItemActive .dragCard {
+  background: rgba(0, 255, 200, 0.04);
+  border-color: rgba(0, 255, 200, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 255, 200, 0.05);
+}
+
+.dragIndexLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+
+.dragItemActive .dragIndexLabel {
+  color: #00ffc8;
+}
+
+
+.dragThumbContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #090e15;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dragThumbImg {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.dragLabel {
+  width: 100%;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dragging {
+  opacity: 0.35 !important;
+  border: 1px dashed rgba(255, 255, 255, 0.3) !important;
+  transform: scale(0.9) !important;
+  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.01) !important;
+}
+
+.dragOverLeft {
+  transform: translateX(12px);
+}
+
+.dragOverLeft::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: -8px;
+  width: 4px;
+  background: #00ffc8;
+  border-radius: 2px;
+  box-shadow: 0 0 10px #00ffc8, 0 0 20px rgba(0, 255, 200, 0.5);
+  animation: pulse 1s infinite alternate;
+}
+
+.dragOverRight {
+  transform: translateX(-12px);
+}
+
+.dragOverRight::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  right: -8px;
+  width: 4px;
+  background: #00ffc8;
+  border-radius: 2px;
+  box-shadow: 0 0 10px #00ffc8, 0 0 20px rgba(0, 255, 200, 0.5);
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+
+

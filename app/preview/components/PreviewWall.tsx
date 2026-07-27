@@ -3,18 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   mediaDocuments,
-  type PdfRemoteState,
   type PdfId,
 } from "@/lib/pdf-control";
 import styles from "../preview.module.css";
 import { ImageViewer } from "./ImageViewer";
 
-const initialPages = Object.fromEntries(
-  mediaDocuments.map((document) => [document.id, 1]),
-) as Record<PdfId, number>;
-
 export function PreviewWall() {
-  const [pages, setPages] = useState(initialPages);
+  const [mediaDocs, setMediaDocs] = useState<any[]>(() => [...mediaDocuments]);
+  const [pages, setPages] = useState<Record<string, number>>(() =>
+    Object.fromEntries(mediaDocuments.map((document) => [document.id, 1]))
+  );
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
@@ -34,18 +32,18 @@ export function PreviewWall() {
       setVideoMuted(data.videoMuted);
       setPages(
         Object.fromEntries(
-          mediaDocuments.map((document) => [
+          docs.map((document: any) => [
             document.id,
-            data.documents[document.id].page,
+            data.documents[document.id]?.page ?? 1,
           ]),
-        ) as Record<PdfId, number>,
+        ) as Record<string, number>,
       );
     } catch {
       // Ignore API offline errors silently
     }
   }, []);
 
-  const activeDocument = mediaDocuments.find(
+  const activeDocument = mediaDocs.find(
     (document) => document.id === activePdfId,
   );
 

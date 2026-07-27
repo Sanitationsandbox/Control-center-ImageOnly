@@ -2,10 +2,10 @@ import { Redis } from "@upstash/redis";
 import {
   isPdfDirection,
   isPdfId,
-  mediaDocuments,
   type PdfControlState,
   type PdfRemoteState,
 } from "@/lib/pdf-control";
+import { getDocuments } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -200,6 +200,9 @@ export async function POST(request: Request) {
     return json({ error: "Invalid PDF command" }, 400);
   }
 
+  // Reload current DB configuration to ensure correct totalPages
+  const docs = getDocuments();
+  const matchedDoc = docs.find((d) => d.id === body.pdfId);
   const document = state.documents[body.pdfId];
   state.activePdfId = body.pdfId;
   const lastPage = document.totalPages ?? Number.MAX_SAFE_INTEGER;
