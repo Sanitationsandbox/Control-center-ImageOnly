@@ -382,7 +382,7 @@ export default function AdminPage() {
             </div>
           ) : (
             <div className={styles.dragStrip}>
-              {slides.map((src, index) => {
+              {slides.map((src: string, index: number) => {
                 const isActive = activePdfId === "pdf-1" && currentPage === index + 1;
                 
                 // Determine dragging animations/classes
@@ -457,7 +457,7 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {slides.map((src, index) => {
+                  {slides.map((src: string, index: number) => {
                     const isActive = activePdfId === "pdf-1" && currentPage === index + 1;
                     return (
                       <tr key={src + "_" + index} className={isActive ? styles.rowActive : ""}>

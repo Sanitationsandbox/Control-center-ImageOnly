@@ -4,6 +4,7 @@ import {
   isPdfId,
   type PdfControlState,
   type PdfRemoteState,
+  mediaDocuments,
 } from "@/lib/pdf-control";
 import { getDocuments } from "@/lib/db";
 
