@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   mediaDocuments,
   type PdfId,
+  type PdfRemoteState,
 } from "@/lib/pdf-control";
 import styles from "../preview.module.css";
 import { ImageViewer } from "./ImageViewer";
@@ -32,9 +33,9 @@ export function PreviewWall() {
       setVideoMuted(data.videoMuted);
       setPages(
         Object.fromEntries(
-          docs.map((document: any) => [
+          mediaDocuments.map((document: any) => [
             document.id,
-            data.documents[document.id]?.page ?? 1,
+            data.documents[document.id as PdfId]?.page ?? 1,
           ]),
         ) as Record<string, number>,
       );
