@@ -3,14 +3,19 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import type { DocumentInfo } from "@/lib/db";
 import styles from "./admin.module.css";
+
+type PdfControlResponse = {
+  activePdfId: string | null;
+  documents: Record<string, { page: number; totalPages: number | null }>;
+  mediaDocuments?: DocumentInfo[];
+};
 
 export default function AdminPage() {
   const [activePdfId, setActivePdfId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number | null>(null);
-  const [mediaDocs, setMediaDocs] = useState<any[]>([]);
-  const [isSending, setIsSending] = useState(false);
+  const [mediaDocs, setMediaDocs] = useState<DocumentInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -37,7 +42,7 @@ export default function AdminPage() {
     try {
       const response = await fetch("/api/pdf-control", { cache: "no-store" });
       if (!response.ok) throw new Error("Fetch failed");
-      const data = await response.json();
+      const data = (await response.json()) as PdfControlResponse;
 
       setActivePdfId(data.activePdfId);
       setMediaDocs(data.mediaDocuments || []);
@@ -45,7 +50,6 @@ export default function AdminPage() {
       const docState = data.documents["pdf-1"];
       if (docState) {
         setCurrentPage(docState.page);
-        setTotalPages(docState.totalPages);
       }
     } catch {
       // Ignore errors during polling
@@ -53,15 +57,17 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    // Initial fetch
-    void fetchState();
+    const initialTimer = window.setTimeout(() => void fetchState(), 0);
 
     // Poll state every 1000ms
     const timer = setInterval(() => {
       void fetchState();
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      window.clearTimeout(initialTimer);
+      clearInterval(timer);
+    };
   }, [fetchState]);
 
   // Modified Show on Screen handler
@@ -274,55 +280,54 @@ export default function AdminPage() {
     setSelectedFiles((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const startModalUpload = () => {
+  const isVideoSlide = (src: string) => {
+    return src.includes("/video/upload/") || /\.(mp4|webm|mov)(\?|$)/i.test(src);
+  };
+
+  const startModalUpload = async () => {
     if (selectedFiles.length === 0) return;
     setIsUploading(true);
     setUploadProgress(0);
 
-    let currentFileIndex = 0;
+    const progressTimer = window.setInterval(() => {
+      setUploadProgress((current) => Math.min(95, current + 5));
+      setSelectedFiles((prev) =>
+        prev.map((item) => ({ ...item, progress: Math.min(95, item.progress + 5) }))
+      );
+    }, 250);
 
-    const uploadNextFile = () => {
-      if (currentFileIndex >= selectedFiles.length) {
-        setUploadProgress(100);
-        setTimeout(() => {
-          setIsUploading(false);
-          setUploadProgress(0);
-          setSelectedFiles([]);
-          setIsModalOpen(false);
-          showToast("Upload completed successfully (UI Mock)!", "success");
-        }, 500);
-        return;
+    try {
+      const formData = new FormData();
+      selectedFiles.forEach(({ file }) => {
+        formData.append("files", file);
+      });
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || "Upload failed");
       }
 
-      let fileProgress = 0;
-      const interval = setInterval(() => {
-        fileProgress += 10;
-        setSelectedFiles((prev) => {
-          const copy = [...prev];
-          if (copy[currentFileIndex]) {
-            copy[currentFileIndex].progress = fileProgress;
-          }
-          return copy;
-        });
+      setUploadProgress(100);
+      setSelectedFiles((prev) => prev.map((item) => ({ ...item, progress: 100 })));
+      setMediaDocs(data.mediaDocuments || []);
+      await fetchState();
 
-        setUploadProgress(() => {
-          const totalFiles = selectedFiles.length;
-          const currentTotal = Math.min(
-            99,
-            Math.round(((currentFileIndex * 100) + fileProgress) / totalFiles)
-          );
-          return currentTotal;
-        });
-
-        if (fileProgress >= 100) {
-          clearInterval(interval);
-          currentFileIndex++;
-          setTimeout(uploadNextFile, 150);
-        }
-      }, 40);
-    };
-
-    uploadNextFile();
+      setSelectedFiles([]);
+      setIsModalOpen(false);
+      showToast(`Uploaded ${data.uploadedUrls?.length || selectedFiles.length} asset(s) to Cloudinary.`, "success");
+    } catch (error) {
+      console.error(error);
+      showToast(error instanceof Error ? error.message : "Upload failed.", "error");
+    } finally {
+      window.clearInterval(progressTimer);
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -413,13 +418,23 @@ export default function AdminPage() {
                     </span>
                     <div className={styles.dragCard}>
                       <div className={styles.dragThumbContainer}>
-                        <Image
-                          src={src}
-                          alt={`Slide thumbnail ${index + 1}`}
-                          fill
-                          sizes="100px"
-                          className={styles.dragThumbImg}
-                        />
+                        {isVideoSlide(src) ? (
+                          <video
+                            src={src}
+                            className={styles.dragThumbImg}
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <Image
+                            src={src}
+                            alt={`Slide thumbnail ${index + 1}`}
+                            fill
+                            sizes="100px"
+                            className={styles.dragThumbImg}
+                          />
+                        )}
                       </div>
                       <div className={styles.dragLabel} title={src.split("/").pop()}>
                         {src.split("/").pop()}
@@ -468,13 +483,23 @@ export default function AdminPage() {
                         </td>
                         <td>
                           <div className={styles.tableThumb}>
-                            <Image
-                              src={src}
-                              alt={`Slide thumbnail ${index + 1}`}
-                              fill
-                              sizes="120px"
-                              className={styles.tableThumbImg}
-                            />
+                            {isVideoSlide(src) ? (
+                              <video
+                                src={src}
+                                className={styles.tableThumbImg}
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                            ) : (
+                              <Image
+                                src={src}
+                                alt={`Slide thumbnail ${index + 1}`}
+                                fill
+                                sizes="120px"
+                                className={styles.tableThumbImg}
+                              />
+                            )}
                           </div>
                         </td>
                         <td>
