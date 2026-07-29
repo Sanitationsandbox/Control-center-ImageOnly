@@ -3,14 +3,50 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   mediaDocuments,
+  type MediaItem,
   type PdfId,
   type PdfRemoteState,
 } from "@/lib/pdf-control";
 import styles from "../preview.module.css";
 import { ImageViewer } from "./ImageViewer";
 
+type EditableMediaDocument = {
+  id: PdfId;
+  kind: "images";
+  images: string[];
+};
+
+type ViewerMediaDocument = EditableMediaDocument & {
+  items: MediaItem[];
+};
+
+type PdfControlResponse = PdfRemoteState & {
+  mediaDocuments?: EditableMediaDocument[];
+};
+
+function isVideoSource(src: string): boolean {
+  return src.includes("/video/upload/") || /\.(mp4|webm|mov)(\?|$)/i.test(src);
+}
+
+function toViewerDocument(document: EditableMediaDocument): ViewerMediaDocument {
+  return {
+    ...document,
+    items: document.images.map((src) => ({
+      kind: isVideoSource(src) ? "video" as const : "image" as const,
+      src,
+    })),
+  };
+}
+
 export function PreviewWall() {
-  const [mediaDocs, setMediaDocs] = useState<any[]>(() => [...mediaDocuments]);
+  const [mediaDocs, setMediaDocs] = useState<ViewerMediaDocument[]>(() =>
+    mediaDocuments.map((document) => ({
+      id: document.id,
+      kind: document.kind,
+      images: document.items.map((item) => item.src),
+      items: [...document.items] as MediaItem[],
+    })),
+  );
   const [pages, setPages] = useState<Record<string, number>>(() =>
     Object.fromEntries(mediaDocuments.map((document) => [document.id, 1]))
   );
@@ -24,16 +60,19 @@ export function PreviewWall() {
       const response = await fetch("/api/pdf-control", { cache: "no-store" });
       if (!response.ok) throw new Error("State request failed");
 
-      const data = (await response.json()) as PdfRemoteState;
+      const data = (await response.json()) as PdfControlResponse;
       if (data.updatedAt <= stateUpdatedAtRef.current) return;
 
       stateUpdatedAtRef.current = data.updatedAt;
+      if (data.mediaDocuments) {
+        setMediaDocs(data.mediaDocuments.map(toViewerDocument));
+      }
       setActivePdfId(data.activePdfId);
       setVideoPlaying(data.videoPlaying);
       setVideoMuted(data.videoMuted);
       setPages(
         Object.fromEntries(
-          mediaDocuments.map((document: any) => [
+          mediaDocuments.map((document) => [
             document.id,
             data.documents[document.id as PdfId]?.page ?? 1,
           ]),
