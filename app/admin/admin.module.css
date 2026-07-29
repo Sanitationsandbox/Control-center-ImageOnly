@@ -536,6 +536,63 @@
   color: #00ffc8;
 }
 
+.deleteModalContent {
+  max-width: 520px;
+}
+
+.deleteModalTitle svg {
+  color: #ff5e5e;
+}
+
+.deletePreviewRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.deletePreviewThumb {
+  position: relative;
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #090e15;
+  border: 1px solid rgba(255, 78, 78, 0.28);
+}
+
+.deleteCopy {
+  min-width: 0;
+}
+
+.deletePrompt {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.deletePath {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
 .modalClose {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -792,6 +849,3 @@
   0% { opacity: 0.6; }
   100% { opacity: 1; }
 }
-
-
-

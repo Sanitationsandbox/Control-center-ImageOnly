@@ -26,18 +26,18 @@ export function ControlCenter() {
   const displayTitle = activePdfId === "pdf-1" ? "Image Slide" : "Control Center";
 
   const applyRemoteState = useCallback((data: PdfRemoteState) => {
+    const docState = data.documents["pdf-1"];
+    if (docState) {
+      setCurrentPage(docState.page);
+      setTotalPages(docState.totalPages);
+    }
+
     if (data.updatedAt <= stateUpdatedAtRef.current) return;
 
     stateUpdatedAtRef.current = data.updatedAt;
     setActivePdfId(data.activePdfId);
     setVideoPlaying(data.videoPlaying);
     setVideoMuted(data.videoMuted);
-
-    const docState = data.documents["pdf-1"];
-    if (docState) {
-      setCurrentPage(docState.page);
-      setTotalPages(docState.totalPages);
-    }
   }, []);
 
   const fetchState = useCallback(async () => {
