@@ -1,9 +1,24 @@
 import { NextResponse } from "next/server";
 import { getDocuments, saveDocuments } from "@/lib/db";
+import { deleteFromCloudinary, getPublicIdFromUrl } from "@/lib/cloudinary";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
 
 export const dynamic = "force-dynamic";
+
+function getCloudinaryResourceType(url: string): "image" | "video" | "raw" {
+  try {
+    const parts = new URL(url).pathname.split("/").filter(Boolean);
+    const resourceType = parts[1];
+
+    if (resourceType === "video") return "video";
+    if (resourceType === "raw") return "raw";
+  } catch {
+    // Fall through to the default image resource type.
+  }
+
+  return "image";
+}
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +64,18 @@ export async function POST(request: Request) {
         } catch (err) {
           console.error(`Failed to delete file from disk: ${body.imageUrl}`, err);
           // Don't fail the request, just log it
+        }
+      }
+
+      const publicId = getPublicIdFromUrl(body.imageUrl);
+      if (publicId) {
+        try {
+          await deleteFromCloudinary(publicId, {
+            resource_type: getCloudinaryResourceType(body.imageUrl),
+            invalidate: true,
+          });
+        } catch (err) {
+          console.error(`Failed to delete file from Cloudinary: ${body.imageUrl}`, err);
         }
       }
 

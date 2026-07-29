@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  mediaDocuments,
   type PdfDirection,
   type PdfId,
   type PdfRemoteState,
