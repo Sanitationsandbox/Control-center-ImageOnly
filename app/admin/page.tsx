@@ -23,6 +23,8 @@ export default function AdminPage() {
 
   // Modal UI State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ imageUrl: string; index: number } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Array<{ file: File; progress: number }>>([]);
   
   // Draggable strip states
@@ -70,109 +72,39 @@ export default function AdminPage() {
     };
   }, [fetchState]);
 
-  // Modified Show on Screen handler
-  // It moves the selected slide to the end of the slideshow sequence (index last) and sets page to last
-  const setPageActive = async (index: number) => {
-    const pdf1Doc = mediaDocs.find((d) => d.id === "pdf-1");
-    if (!pdf1Doc) return;
-
-    const targetImage = pdf1Doc.images[index];
-    const newImages = [...pdf1Doc.images];
-
-    // Move clicked slide to the end of the array
-    newImages.splice(index, 1);
-    newImages.push(targetImage);
-
-    try {
-      // 1. Save reordered array to server
-      const reorderResponse = await fetch("/api/admin-control", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "reorder",
-          images: newImages,
-        }),
-      });
-
-      if (!reorderResponse.ok) throw new Error("Reorder before show failed");
-
-      // 2. Set screen active page to the last index
-      const lastPageIndex = newImages.length;
-      const setPageResponse = await fetch("/api/admin-control", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "setPage",
-          page: lastPageIndex,
-        }),
-      });
-
-      if (!setPageResponse.ok) throw new Error("Set active page failed");
-      
-      showToast(`Slide moved to last and shown on screen!`, "success");
-      await fetchState();
-    } catch (error) {
-      console.error(error);
-      showToast("Failed to show slide on screen.", "error");
-    }
+  const requestDeleteSlide = (imageUrl: string, index: number) => {
+    setDeleteTarget({ imageUrl, index });
   };
 
-  const moveSlide = async (index: number, direction: "up" | "down") => {
-    const pdf1Doc = mediaDocs.find((d) => d.id === "pdf-1");
-    if (!pdf1Doc) return;
-
-    const newImages = [...pdf1Doc.images];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-
-    if (targetIndex < 0 || targetIndex >= newImages.length) return;
-
-    // Swap
-    const temp = newImages[index];
-    newImages[index] = newImages[targetIndex];
-    newImages[targetIndex] = temp;
-
-    try {
-      const response = await fetch("/api/admin-control", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "reorder",
-          images: newImages,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Reorder failed");
-      
-      showToast("Slide order updated!", "success");
-      await fetchState();
-    } catch (error) {
-      console.error(error);
-      showToast("Failed to update slide order.", "error");
-    }
+  const closeDeleteModal = () => {
+    if (isDeleting) return;
+    setDeleteTarget(null);
   };
 
-  const deleteSlide = async (imageUrl: string) => {
-    if (!confirm("Are you sure you want to delete this slide from the slideshow?")) {
-      return;
-    }
+  const confirmDeleteSlide = async () => {
+    if (!deleteTarget) return;
 
+    setIsDeleting(true);
     try {
       const response = await fetch("/api/admin-control", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "delete",
-          imageUrl,
+          imageUrl: deleteTarget.imageUrl,
         }),
       });
 
       if (!response.ok) throw new Error("Delete failed");
       
       showToast("Slide deleted successfully!", "success");
+      setDeleteTarget(null);
       await fetchState();
     } catch (error) {
       console.error(error);
       showToast("Failed to delete slide.", "error");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -468,7 +400,7 @@ export default function AdminPage() {
                     <th style={{ width: "60px" }}>Slide</th>
                     <th style={{ width: "120px" }}>Thumbnail</th>
                     <th>File Path</th>
-                    <th style={{ width: "320px" }}>Actions</th>
+                    <th style={{ width: "120px" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -509,38 +441,7 @@ export default function AdminPage() {
                           <div className={styles.tableActions}>
                             <button
                               type="button"
-                              onClick={() => setPageActive(index)}
-                              className={`${styles.btn} ${isActive ? styles.btnPrimary : styles.btnSecondary}`}
-                              style={{ padding: "6px 12px", fontSize: "0.8rem", borderRadius: "8px" }}
-                            >
-                              Show on Screen
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={index === 0}
-                              onClick={() => moveSlide(index, "up")}
-                              className={styles.btnIcon}
-                              style={{ padding: "6px", borderRadius: "8px" }}
-                              aria-label="Move Slide Up"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={index === slides.length - 1}
-                              onClick={() => moveSlide(index, "down")}
-                              className={styles.btnIcon}
-                              style={{ padding: "6px", borderRadius: "8px" }}
-                              aria-label="Move Slide Down"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => deleteSlide(src)}
+                              onClick={() => requestDeleteSlide(src, index)}
                               className={`${styles.btn} ${styles.btnDanger}`}
                               style={{ padding: "6px 12px", fontSize: "0.8rem", borderRadius: "8px" }}
                             >
@@ -671,6 +572,74 @@ export default function AdminPage() {
                 disabled={isUploading || selectedFiles.length === 0}
               >
                 Start Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className={styles.modalOverlay} onClick={closeDeleteModal}>
+          <div className={`${styles.modalContent} ${styles.deleteModalContent}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={`${styles.modalTitle} ${styles.deleteModalTitle}`}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                Delete Slide
+              </h3>
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className={styles.modalClose}
+                disabled={isDeleting}
+                aria-label="Close delete modal"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div className={styles.deletePreviewRow}>
+              <div className={styles.deletePreviewThumb}>
+                {isVideoSlide(deleteTarget.imageUrl) ? (
+                  <video
+                    src={deleteTarget.imageUrl}
+                    className={styles.tableThumbImg}
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  <Image
+                    src={deleteTarget.imageUrl}
+                    alt={`Slide ${deleteTarget.index + 1} thumbnail`}
+                    fill
+                    sizes="120px"
+                    className={styles.tableThumbImg}
+                  />
+                )}
+              </div>
+              <div className={styles.deleteCopy}>
+                <p className={styles.deletePrompt}>Delete slide {deleteTarget.index + 1}?</p>
+                <p className={styles.deletePath}>{deleteTarget.imageUrl}</p>
+              </div>
+            </div>
+
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className={styles.btnSecondary}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDeleteSlide()}
+                className={`${styles.btn} ${styles.btnDanger}`}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Slide"}
               </button>
             </div>
           </div>

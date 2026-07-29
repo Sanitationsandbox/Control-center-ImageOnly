@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  mediaDocuments,
   type MediaItem,
   type PdfId,
   type PdfRemoteState,
@@ -39,17 +38,8 @@ function toViewerDocument(document: EditableMediaDocument): ViewerMediaDocument 
 }
 
 export function PreviewWall() {
-  const [mediaDocs, setMediaDocs] = useState<ViewerMediaDocument[]>(() =>
-    mediaDocuments.map((document) => ({
-      id: document.id,
-      kind: document.kind,
-      images: document.items.map((item) => item.src),
-      items: [...document.items] as MediaItem[],
-    })),
-  );
-  const [pages, setPages] = useState<Record<string, number>>(() =>
-    Object.fromEntries(mediaDocuments.map((document) => [document.id, 1]))
-  );
+  const [mediaDocs, setMediaDocs] = useState<ViewerMediaDocument[]>([]);
+  const [pages, setPages] = useState<Record<string, number>>({});
   const [activePdfId, setActivePdfId] = useState<PdfId | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
@@ -61,20 +51,21 @@ export function PreviewWall() {
       if (!response.ok) throw new Error("State request failed");
 
       const data = (await response.json()) as PdfControlResponse;
-      if (data.updatedAt <= stateUpdatedAtRef.current) return;
-
-      stateUpdatedAtRef.current = data.updatedAt;
       if (data.mediaDocuments) {
         setMediaDocs(data.mediaDocuments.map(toViewerDocument));
       }
+
+      if (data.updatedAt <= stateUpdatedAtRef.current) return;
+
+      stateUpdatedAtRef.current = data.updatedAt;
       setActivePdfId(data.activePdfId);
       setVideoPlaying(data.videoPlaying);
       setVideoMuted(data.videoMuted);
       setPages(
         Object.fromEntries(
-          mediaDocuments.map((document) => [
-            document.id,
-            data.documents[document.id as PdfId]?.page ?? 1,
+          Object.entries(data.documents).map(([documentId, document]) => [
+            documentId,
+            document.page,
           ]),
         ) as Record<string, number>,
       );
@@ -101,7 +92,7 @@ export function PreviewWall() {
       {activeDocument?.kind === "images" ? (
         <ImageViewer
           items={activeDocument.items}
-          pageNumber={pages[activeDocument.id]}
+          pageNumber={pages[activeDocument.id] ?? 1}
           label={activeDocument.id}
           videoPlaying={videoPlaying}
           videoMuted={videoMuted}
