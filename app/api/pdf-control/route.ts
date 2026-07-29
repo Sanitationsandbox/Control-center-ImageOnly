@@ -26,6 +26,15 @@ const globalState = globalThis as typeof globalThis & {
   pdfRemoteState?: PdfRemoteState;
 };
 
+function getDynamicPageCount(pdfId: string): number | null {
+  const document = getDocuments().find((item) => item.id === pdfId);
+  return document?.kind === "images" ? document.images.length : null;
+}
+
+function isVideoSource(src: string): boolean {
+  return src.includes("/video/upload/") || /\.(mp4|webm|mov)(\?|$)/i.test(src);
+}
+
 function createInitialState(): PdfRemoteState {
   return {
     updatedAt: Date.now(),
@@ -39,7 +48,8 @@ function createInitialState(): PdfRemoteState {
         {
           page: 1,
           totalPages:
-            document.kind === "images" ? document.items.length : null,
+            getDynamicPageCount(document.id) ??
+            (document.kind === "images" ? document.items.length : null),
           updatedAt: Date.now(),
         },
       ]),
@@ -60,9 +70,10 @@ function normalizeState(storedState: PdfRemoteState): PdfRemoteState {
     };
 
     if (document.kind === "images") {
-      storedState.documents[document.id].totalPages = document.items.length;
+      const totalPages = getDynamicPageCount(document.id) ?? document.items.length;
+      storedState.documents[document.id].totalPages = totalPages;
       storedState.documents[document.id].page = Math.min(
-        document.items.length,
+        totalPages,
         Math.max(1, storedState.documents[document.id].page),
       );
     }
@@ -118,7 +129,10 @@ function json(data: unknown, status = 200) {
 }
 
 export async function GET() {
-  return json(await readState());
+  return json({
+    ...(await readState()),
+    mediaDocuments: getDocuments(),
+  });
 }
 
 export async function POST(request: Request) {
@@ -201,12 +215,14 @@ export async function POST(request: Request) {
     return json({ error: "Invalid PDF command" }, 400);
   }
 
-  // Reload current DB configuration to ensure correct totalPages
   const docs = getDocuments();
   const matchedDoc = docs.find((d) => d.id === body.pdfId);
   const document = state.documents[body.pdfId];
   state.activePdfId = body.pdfId;
-  const lastPage = document.totalPages ?? Number.MAX_SAFE_INTEGER;
+  const lastPage =
+    matchedDoc?.kind === "images"
+      ? matchedDoc.images.length
+      : document.totalPages ?? Number.MAX_SAFE_INTEGER;
   const requestedPage =
     typeof body.targetPage === "number" && Number.isInteger(body.targetPage)
       ? body.targetPage
@@ -217,9 +233,7 @@ export async function POST(request: Request) {
   document.page = Math.min(lastPage, Math.max(1, requestedPage));
   document.updatedAt = Date.now();
 
-  const mediaDocument = mediaDocuments.find((item) => item.id === body.pdfId);
-  state.videoPlaying =
-    mediaDocument?.items[document.page - 1]?.kind === "video";
+  state.videoPlaying = isVideoSource(matchedDoc?.images[document.page - 1] ?? "");
   if (state.videoPlaying) state.videoMuted = true;
 
   markStateChanged(state);

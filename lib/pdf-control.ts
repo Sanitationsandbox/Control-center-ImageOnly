@@ -32,7 +32,10 @@ export const mediaDocuments = [
   },
 ] as const;
 
-export type MediaItem = (typeof mediaDocuments)[number]["items"][number];
+export type MediaItem = {
+  kind: "image" | "video";
+  src: string;
+};
 
 export type PdfId = (typeof mediaDocuments)[number]["id"];
 export type PdfDirection = "previous" | "next";
