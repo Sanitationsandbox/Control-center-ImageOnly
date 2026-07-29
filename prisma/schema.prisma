@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Mirrors the shape the admin panel (app/admin/page.tsx) currently reads/writes
+// through lib/db.json + lib/db.ts (getDocuments/saveDocuments). One row per
+// screen/document (e.g. "pdf-1"), with an ordered set of slides.
+model MediaDocument {
+  id        String    @id
+  kind      MediaKind
+  slides    Slide[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+ 
+// One slide/media item within a document. `position` drives the ordering used
+// by the drag-to-reorder UI and the "Show on Screen" / move up/down actions
+// in the admin panel.
+model Slide {
+  id         String        @id @default(cuid())
+  documentId String
+  document   MediaDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  src        String
+  kind       SlideKind     @default(image)
+  position   Int
+  createdAt  DateTime      @default(now())
+ 
+  @@unique([documentId, position])
+  @@index([documentId])
+}
+ 
+enum MediaKind {
+  images
+  video
+}
+ 
+enum SlideKind {
+  image
+  video
+}
