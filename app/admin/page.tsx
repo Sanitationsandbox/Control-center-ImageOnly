@@ -283,7 +283,7 @@ export default function AdminPage() {
         <header className={styles.header}>
           <div className={styles.titleContainer}>
             <h1 className={styles.title}>
-              Rubenius Admin Panel
+              Screen Control System
               <span>Screen Control Dashboard</span>
             </h1>
           </div>
