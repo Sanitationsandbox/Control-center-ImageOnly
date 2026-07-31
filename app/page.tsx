@@ -6,8 +6,7 @@ export default function Home() {
     <main className={backgroundStyles.page}>
       <div className={backgroundStyles.glow} aria-hidden="true" />
       <h1 className={styles.title}>
-        Welcome to Rubenius
-        <span>Screen Control Center</span>
+        <span>SCREEN CONTROL SYSTEM</span>
       </h1>
     </main>
   );
