@@ -102,16 +102,32 @@
   z-index: 10;
   top: 8px;
   right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 9px;
-  color: white;
+  color: rgba(255, 255, 255, 0.78);
   border-radius: 999px;
-  background: rgba(180, 52, 52, 0.78);
+  background: rgba(0, 0, 0, 0.34);
   font-size: 11px;
   opacity: 0.72;
 }
 
 .connection[data-online="true"] {
-  background: rgba(20, 120, 83, 0.78);
+  color: rgba(208, 255, 235, 0.92);
+}
+
+.connectionDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: 0 0 8px rgba(255, 95, 87, 0.72);
+}
+
+.connection[data-online="true"] .connectionDot {
+  background: #00ffc8;
+  box-shadow: 0 0 8px rgba(0, 255, 200, 0.72);
 }
 
 .splash {

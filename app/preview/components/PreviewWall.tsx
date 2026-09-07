@@ -101,7 +101,8 @@ export function PreviewWall() {
         className={styles.connection}
         data-online={socketStatus === "Connected"}
       >
-        WebSocket: {socketStatus}
+        <span className={styles.connectionDot} aria-hidden="true" />
+        {socketStatus}
       </span>
       {activeDocument?.kind === "images" ? (
         <ImageViewer

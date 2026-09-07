@@ -201,7 +201,8 @@ export function ControlCenter() {
             className={styles.connectionStatus}
             data-online={socketStatus === "Connected"}
           >
-            WebSocket: {socketStatus}
+            <span className={styles.connectionDot} aria-hidden="true" />
+            {socketStatus}
           </span>
           <button
             type="button"

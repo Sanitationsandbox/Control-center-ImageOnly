@@ -287,19 +287,34 @@
 .connectionStatus {
   margin-left: auto;
   margin-right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 8px;
   color: rgba(255, 255, 255, 0.76);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  background: rgba(180, 52, 52, 0.22);
+  background: rgba(0, 0, 0, 0.18);
   font-size: 11px;
   white-space: nowrap;
 }
 
 .connectionStatus[data-online="true"] {
   color: rgba(208, 255, 235, 0.92);
-  border-color: rgba(0, 255, 200, 0.24);
-  background: rgba(20, 120, 83, 0.24);
+  border-color: rgba(0, 255, 200, 0.16);
+}
+
+.connectionDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: 0 0 8px rgba(255, 95, 87, 0.72);
+}
+
+.connectionStatus[data-online="true"] .connectionDot {
+  background: #00ffc8;
+  box-shadow: 0 0 8px rgba(0, 255, 200, 0.72);
 }
 
 .powerBtn {
