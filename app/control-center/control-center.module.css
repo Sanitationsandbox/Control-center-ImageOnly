@@ -284,6 +284,24 @@
   opacity: 0.95;
 }
 
+.connectionStatus {
+  margin-left: auto;
+  margin-right: 12px;
+  padding: 4px 8px;
+  color: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(180, 52, 52, 0.22);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.connectionStatus[data-online="true"] {
+  color: rgba(208, 255, 235, 0.92);
+  border-color: rgba(0, 255, 200, 0.24);
+  background: rgba(20, 120, 83, 0.24);
+}
+
 .powerBtn {
   display: flex;
   align-items: center;

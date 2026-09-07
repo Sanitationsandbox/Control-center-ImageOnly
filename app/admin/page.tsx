@@ -4,13 +4,9 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { DocumentInfo } from "@/lib/db";
+import type { PdfControlResponse } from "@/lib/control-state";
+import { useControlSocket } from "@/lib/use-control-socket";
 import styles from "./admin.module.css";
-
-type PdfControlResponse = {
-  activePdfId: string | null;
-  documents: Record<string, { page: number; totalPages: number | null }>;
-  mediaDocuments?: DocumentInfo[];
-};
 
 export default function AdminPage() {
   const [activePdfId, setActivePdfId] = useState<string | null>(null);
@@ -32,6 +28,23 @@ export default function AdminPage() {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const modalFileInputRef = useRef<HTMLInputElement>(null);
+  const requestInFlightRef = useRef(false);
+  const stateVersionRef = useRef(-1);
+
+  const applyControlState = useCallback((data: PdfControlResponse) => {
+    if (data.version <= stateVersionRef.current) return;
+
+    stateVersionRef.current = data.version;
+    setActivePdfId(data.activePdfId);
+    setMediaDocs(data.mediaDocuments || []);
+
+    const docState = data.documents["pdf-1"];
+    if (docState) {
+      setCurrentPage(docState.page);
+    }
+  }, []);
+
+  const { status: socketStatus } = useControlSocket(applyControlState);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -41,34 +54,26 @@ export default function AdminPage() {
   };
 
   const fetchState = useCallback(async () => {
+    if (requestInFlightRef.current) return;
+
+    requestInFlightRef.current = true;
     try {
       const response = await fetch("/api/pdf-control", { cache: "no-store" });
       if (!response.ok) throw new Error("Fetch failed");
       const data = (await response.json()) as PdfControlResponse;
-
-      setActivePdfId(data.activePdfId);
-      setMediaDocs(data.mediaDocuments || []);
-      
-      const docState = data.documents["pdf-1"];
-      if (docState) {
-        setCurrentPage(docState.page);
-      }
+      applyControlState(data);
     } catch {
-      // Ignore errors during polling
+      // Ignore initial state load errors silently.
+    } finally {
+      requestInFlightRef.current = false;
     }
-  }, []);
+  }, [applyControlState]);
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void fetchState(), 0);
 
-    // Poll state every 1000ms
-    const timer = setInterval(() => {
-      void fetchState();
-    }, 1000);
-
     return () => {
       window.clearTimeout(initialTimer);
-      clearInterval(timer);
     };
   }, [fetchState]);
 
@@ -288,6 +293,12 @@ export default function AdminPage() {
             </h1>
           </div>
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <span
+              className={styles.connectionStatus}
+              data-online={socketStatus === "Connected"}
+            >
+              WebSocket: {socketStatus}
+            </span>
             <button
               onClick={() => setIsModalOpen(true)}
               className={styles.btnPrimary}

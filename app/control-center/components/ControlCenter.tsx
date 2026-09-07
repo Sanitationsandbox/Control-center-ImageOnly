@@ -6,6 +6,7 @@ import {
   type PdfId,
   type PdfRemoteState,
 } from "@/lib/pdf-control";
+import { useControlSocket } from "@/lib/use-control-socket";
 import styles from "../control-center.module.css";
 
 // All items are images — no video page in this build
@@ -17,7 +18,8 @@ export function ControlCenter() {
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMuted, setVideoMuted] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const stateUpdatedAtRef = useRef(-1);
+  const stateVersionRef = useRef(-1);
+  const requestInFlightRef = useRef(false);
 
   // No video items — isVideoPage is always false
   const isVideoPage = false;
@@ -32,34 +34,37 @@ export function ControlCenter() {
       setTotalPages(docState.totalPages);
     }
 
-    if (data.updatedAt <= stateUpdatedAtRef.current) return;
+    if (data.version <= stateVersionRef.current) return;
 
-    stateUpdatedAtRef.current = data.updatedAt;
+    stateVersionRef.current = data.version;
     setActivePdfId(data.activePdfId);
     setVideoPlaying(data.videoPlaying);
     setVideoMuted(data.videoMuted);
   }, []);
 
+  const { status: socketStatus } = useControlSocket(applyRemoteState);
+
   const fetchState = useCallback(async () => {
+    if (requestInFlightRef.current) return;
+
+    requestInFlightRef.current = true;
     try {
       const response = await fetch("/api/pdf-control", { cache: "no-store" });
       if (!response.ok) throw new Error("Fetch failed");
       const data = (await response.json()) as PdfRemoteState;
       applyRemoteState(data);
     } catch {
-      // Ignore errors during polling
+      // Ignore initial state load errors silently.
+    } finally {
+      requestInFlightRef.current = false;
     }
   }, [applyRemoteState]);
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => void fetchState(), 0);
-    const timer = setInterval(() => {
-      void fetchState();
-    }, 500);
 
     return () => {
       window.clearTimeout(initialTimer);
-      clearInterval(timer);
     };
   }, [fetchState]);
 
@@ -192,6 +197,12 @@ export function ControlCenter() {
       <div className={styles.remoteContainer}>
         <div className={styles.remoteHeader}>
           <h1 className={styles.remoteTitle}>{displayTitle}</h1>
+          <span
+            className={styles.connectionStatus}
+            data-online={socketStatus === "Connected"}
+          >
+            WebSocket: {socketStatus}
+          </span>
           <button
             type="button"
             className={`${styles.powerBtn} ${activePdfId === "pdf-1" ? styles.powerOn : styles.powerOff}`}

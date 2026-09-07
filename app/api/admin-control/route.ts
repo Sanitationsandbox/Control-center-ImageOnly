@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { getDocuments, saveDocuments } from "@/lib/db";
 import { deleteFromCloudinary, getPublicIdFromUrl } from "@/lib/cloudinary";
+import { touchControlState } from "@/lib/control-state";
+import { broadcastControlState } from "@/lib/control-events";
+import { publishControlState } from "@/lib/control-pubsub";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
 
 export const dynamic = "force-dynamic";
+
+async function broadcastLatestControlState() {
+  const state = await touchControlState();
+  broadcastControlState(state);
+  await publishControlState(state);
+}
 
 function getCloudinaryResourceType(url: string): "image" | "video" | "raw" {
   try {
@@ -54,6 +63,7 @@ export async function POST(request: Request) {
       // Remove from list
       pdf1.images.splice(index, 1);
       saveDocuments(docs);
+      await broadcastLatestControlState();
 
       // Try to physically delete from disk if it was uploaded
       if (body.imageUrl.startsWith("/uploads/")) {
@@ -89,6 +99,7 @@ export async function POST(request: Request) {
 
       pdf1.images = body.images;
       saveDocuments(docs);
+      await broadcastLatestControlState();
 
       return NextResponse.json({ success: true, mediaDocuments: docs });
     }

@@ -49,6 +49,7 @@ export type PdfPageState = {
 export type PdfControlState = Record<PdfId, PdfPageState>;
 
 export type PdfRemoteState = {
+  version: number;
   updatedAt: number;
   activePdfId: PdfId | null;
   activeUpdatedAt: number;

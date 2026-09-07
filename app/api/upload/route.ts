@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDocuments, saveDocuments } from "@/lib/db";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { touchControlState } from "@/lib/control-state";
+import { broadcastControlState } from "@/lib/control-events";
+import { publishControlState } from "@/lib/control-pubsub";
 import path from "node:path";
 
 export const dynamic = "force-dynamic";
@@ -78,6 +81,9 @@ export async function POST(request: Request) {
     if (pdf1) {
       pdf1.images = [...pdf1.images, ...uploadedUrls];
       saveDocuments(docs);
+      const state = await touchControlState();
+      broadcastControlState(state);
+      await publishControlState(state);
     }
 
     return NextResponse.json({

@@ -106,7 +106,7 @@ function SequenceVideo({ src, playing, muted }: SequenceVideoProps) {
         autoPlay
         muted={muted}
         playsInline
-        preload="auto"
+        preload={playing ? "auto" : "metadata"}
         className={styles.sequenceVideo}
         onCanPlay={() => {
           if (playing) void playVideo();

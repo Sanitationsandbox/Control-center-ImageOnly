@@ -31,7 +31,7 @@ export function VideoViewer({ src, playing }: VideoViewerProps) {
         autoPlay
         muted
         playsInline
-        preload="auto"
+        preload={playing ? "auto" : "metadata"}
       >
         Your browser does not support the video tag.
       </video>
